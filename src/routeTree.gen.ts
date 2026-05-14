@@ -16,6 +16,11 @@ import { Route as TeacherProfileRouteImport } from './routes/teacher/profile'
 import { Route as TeacherPendingRouteImport } from './routes/teacher/pending'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher/dashboard'
 import { Route as TeacherCoursesRouteImport } from './routes/teacher/courses'
+import { Route as StudentProgressRouteImport } from './routes/student/progress'
+import { Route as StudentProfileRouteImport } from './routes/student/profile'
+import { Route as StudentPendingRouteImport } from './routes/student/pending'
+import { Route as StudentDashboardRouteImport } from './routes/student/dashboard'
+import { Route as StudentCoursesRouteImport } from './routes/student/courses'
 import { Route as AdminTeachersRouteImport } from './routes/admin/teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -58,6 +63,31 @@ const TeacherCoursesRoute = TeacherCoursesRouteImport.update({
   path: '/teacher/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentProgressRoute = StudentProgressRouteImport.update({
+  id: '/student/progress',
+  path: '/student/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/student/profile',
+  path: '/student/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentPendingRoute = StudentPendingRouteImport.update({
+  id: '/student/pending',
+  path: '/student/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentDashboardRoute = StudentDashboardRouteImport.update({
+  id: '/student/dashboard',
+  path: '/student/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentCoursesRoute = StudentCoursesRouteImport.update({
+  id: '/student/courses',
+  path: '/student/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
   id: '/admin/teachers',
   path: '/admin/teachers',
@@ -97,6 +127,11 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/courses': typeof StudentCoursesRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/pending': typeof StudentPendingRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/teacher/courses': typeof TeacherCoursesRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/pending': typeof TeacherPendingRoute
@@ -112,6 +147,11 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/courses': typeof StudentCoursesRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/pending': typeof StudentPendingRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/teacher/courses': typeof TeacherCoursesRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/pending': typeof TeacherPendingRoute
@@ -128,6 +168,11 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/courses': typeof StudentCoursesRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/pending': typeof StudentPendingRoute
+  '/student/profile': typeof StudentProfileRoute
+  '/student/progress': typeof StudentProgressRoute
   '/teacher/courses': typeof TeacherCoursesRoute
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/pending': typeof TeacherPendingRoute
@@ -145,6 +190,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/courses'
+    | '/student/dashboard'
+    | '/student/pending'
+    | '/student/profile'
+    | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/pending'
@@ -160,6 +210,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/courses'
+    | '/student/dashboard'
+    | '/student/pending'
+    | '/student/profile'
+    | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/pending'
@@ -175,6 +230,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/courses'
+    | '/student/dashboard'
+    | '/student/pending'
+    | '/student/profile'
+    | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/pending'
@@ -191,6 +251,11 @@ export interface RootRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  StudentCoursesRoute: typeof StudentCoursesRoute
+  StudentDashboardRoute: typeof StudentDashboardRoute
+  StudentPendingRoute: typeof StudentPendingRoute
+  StudentProfileRoute: typeof StudentProfileRoute
+  StudentProgressRoute: typeof StudentProgressRoute
   TeacherCoursesRoute: typeof TeacherCoursesRoute
   TeacherDashboardRoute: typeof TeacherDashboardRoute
   TeacherPendingRoute: typeof TeacherPendingRoute
@@ -250,6 +315,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeacherCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/progress': {
+      id: '/student/progress'
+      path: '/student/progress'
+      fullPath: '/student/progress'
+      preLoaderRoute: typeof StudentProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/student/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/pending': {
+      id: '/student/pending'
+      path: '/student/pending'
+      fullPath: '/student/pending'
+      preLoaderRoute: typeof StudentPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/dashboard': {
+      id: '/student/dashboard'
+      path: '/student/dashboard'
+      fullPath: '/student/dashboard'
+      preLoaderRoute: typeof StudentDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/courses': {
+      id: '/student/courses'
+      path: '/student/courses'
+      fullPath: '/student/courses'
+      preLoaderRoute: typeof StudentCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/teachers': {
       id: '/admin/teachers'
       path: '/admin/teachers'
@@ -303,6 +403,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  StudentCoursesRoute: StudentCoursesRoute,
+  StudentDashboardRoute: StudentDashboardRoute,
+  StudentPendingRoute: StudentPendingRoute,
+  StudentProfileRoute: StudentProfileRoute,
+  StudentProgressRoute: StudentProgressRoute,
   TeacherCoursesRoute: TeacherCoursesRoute,
   TeacherDashboardRoute: TeacherDashboardRoute,
   TeacherPendingRoute: TeacherPendingRoute,
@@ -313,3 +418,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
