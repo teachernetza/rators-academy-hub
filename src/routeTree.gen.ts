@@ -11,6 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TeacherStudentsRouteImport } from './routes/teacher/students'
+import { Route as TeacherProfileRouteImport } from './routes/teacher/profile'
+import { Route as TeacherPendingRouteImport } from './routes/teacher/pending'
+import { Route as TeacherDashboardRouteImport } from './routes/teacher/dashboard'
+import { Route as TeacherCoursesRouteImport } from './routes/teacher/courses'
 import { Route as AdminTeachersRouteImport } from './routes/admin/teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -26,6 +31,31 @@ const LoginRoute = LoginRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherStudentsRoute = TeacherStudentsRouteImport.update({
+  id: '/teacher/students',
+  path: '/teacher/students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherProfileRoute = TeacherProfileRouteImport.update({
+  id: '/teacher/profile',
+  path: '/teacher/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherPendingRoute = TeacherPendingRouteImport.update({
+  id: '/teacher/pending',
+  path: '/teacher/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherDashboardRoute = TeacherDashboardRouteImport.update({
+  id: '/teacher/dashboard',
+  path: '/teacher/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherCoursesRoute = TeacherCoursesRouteImport.update({
+  id: '/teacher/courses',
+  path: '/teacher/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
@@ -67,6 +97,11 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/pending': typeof TeacherPendingRoute
+  '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/students': typeof TeacherStudentsRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +112,11 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/pending': typeof TeacherPendingRoute
+  '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/students': typeof TeacherStudentsRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
 }
 export interface FileRoutesById {
@@ -88,6 +128,11 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/pending': typeof TeacherPendingRoute
+  '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/students': typeof TeacherStudentsRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +145,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/teacher/courses'
+    | '/teacher/dashboard'
+    | '/teacher/pending'
+    | '/teacher/profile'
+    | '/teacher/students'
     | '/api/public/seed'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +160,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/teacher/courses'
+    | '/teacher/dashboard'
+    | '/teacher/pending'
+    | '/teacher/profile'
+    | '/teacher/students'
     | '/api/public/seed'
   id:
     | '__root__'
@@ -120,6 +175,11 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/teacher/courses'
+    | '/teacher/dashboard'
+    | '/teacher/pending'
+    | '/teacher/profile'
+    | '/teacher/students'
     | '/api/public/seed'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +191,11 @@ export interface RootRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  TeacherCoursesRoute: typeof TeacherCoursesRoute
+  TeacherDashboardRoute: typeof TeacherDashboardRoute
+  TeacherPendingRoute: typeof TeacherPendingRoute
+  TeacherProfileRoute: typeof TeacherProfileRoute
+  TeacherStudentsRoute: typeof TeacherStudentsRoute
   ApiPublicSeedRoute: typeof ApiPublicSeedRoute
 }
 
@@ -148,6 +213,41 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/students': {
+      id: '/teacher/students'
+      path: '/teacher/students'
+      fullPath: '/teacher/students'
+      preLoaderRoute: typeof TeacherStudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/profile': {
+      id: '/teacher/profile'
+      path: '/teacher/profile'
+      fullPath: '/teacher/profile'
+      preLoaderRoute: typeof TeacherProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/pending': {
+      id: '/teacher/pending'
+      path: '/teacher/pending'
+      fullPath: '/teacher/pending'
+      preLoaderRoute: typeof TeacherPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/dashboard': {
+      id: '/teacher/dashboard'
+      path: '/teacher/dashboard'
+      fullPath: '/teacher/dashboard'
+      preLoaderRoute: typeof TeacherDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/courses': {
+      id: '/teacher/courses'
+      path: '/teacher/courses'
+      fullPath: '/teacher/courses'
+      preLoaderRoute: typeof TeacherCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/teachers': {
@@ -203,6 +303,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  TeacherCoursesRoute: TeacherCoursesRoute,
+  TeacherDashboardRoute: TeacherDashboardRoute,
+  TeacherPendingRoute: TeacherPendingRoute,
+  TeacherProfileRoute: TeacherProfileRoute,
+  TeacherStudentsRoute: TeacherStudentsRoute,
   ApiPublicSeedRoute: ApiPublicSeedRoute,
 }
 export const routeTree = rootRouteImport
