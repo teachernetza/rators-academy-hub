@@ -14,10 +14,7 @@ function generatePassword(length = 12) {
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
+    .from("profiles").select("role").eq("id", userId).maybeSingle();
   if (!data || data.role !== "admin") throw new Error("Forbidden");
 }
 
@@ -45,7 +42,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const { data } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, role, status, created_at")
+      .select("id, full_name, role, status, is_active, created_at")
       .order("created_at", { ascending: false });
     return data ?? [];
   });
@@ -74,6 +71,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       full_name: data.full_name,
       role: data.role,
       status: "active",
+      is_active: true,
     });
     return { id: created.user!.id, email: data.email, password };
   });
@@ -85,6 +83,44 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     if (data.id === context.userId) throw new Error("Cannot delete yourself");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminToggleActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(), is_active: z.boolean(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin.from("profiles")
+      .update({ is_active: data.is_active, status: data.is_active ? "active" : "inactive" })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminListByRole = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ role: z.enum(["teacher", "student"]) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { data: rows } = await supabaseAdmin.from("profiles")
+      .select("id, full_name").eq("role", data.role).order("full_name");
+    return rows ?? [];
+  });
+
+export const adminEnrollStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    student_id: z.string().uuid(),
+    course_id: z.string().uuid(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin.from("enrollments")
+      .upsert({ student_id: data.student_id, course_id: data.course_id }, { onConflict: "student_id,course_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
