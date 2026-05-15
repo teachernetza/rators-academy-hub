@@ -112,8 +112,8 @@ function LessonView({ lesson, courseId }: { lesson: any; courseId: string }) {
       {lesson.type === "video" && (
         <>
           <div className="aspect-video rounded-lg overflow-hidden bg-black">
-            {data.lesson.content?.video_url ? (
-              <iframe src={data.lesson.content.video_url} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            {(data.lesson.content as any)?.video_url ? (
+              <iframe src={(data.lesson.content as any).video_url} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             ) : <div className="flex items-center justify-center h-full text-white/60">No video URL.</div>}
           </div>
           {!data.completed && (

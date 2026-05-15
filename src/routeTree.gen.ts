@@ -28,6 +28,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as TeacherCoursesCourseIdRouteImport } from './routes/teacher/courses.$courseId'
+import { Route as StudentCoursesCourseIdRouteImport } from './routes/student/courses.$courseId'
 import { Route as ApiPublicSeedRouteImport } from './routes/api/public/seed'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses.$courseId'
 
@@ -126,6 +127,11 @@ const TeacherCoursesCourseIdRoute = TeacherCoursesCourseIdRouteImport.update({
   path: '/$courseId',
   getParentRoute: () => TeacherCoursesRoute,
 } as any)
+const StudentCoursesCourseIdRoute = StudentCoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => StudentCoursesRoute,
+} as any)
 const ApiPublicSeedRoute = ApiPublicSeedRouteImport.update({
   id: '/api/public/seed',
   path: '/api/public/seed',
@@ -145,7 +151,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesByTo {
@@ -168,7 +175,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesById {
@@ -192,7 +200,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRouteTypes {
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   id:
     | '__root__'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   fileRoutesById: FileRoutesById
 }
@@ -287,7 +299,7 @@ export interface RootRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
-  StudentCoursesRoute: typeof StudentCoursesRoute
+  StudentCoursesRoute: typeof StudentCoursesRouteWithChildren
   StudentDashboardRoute: typeof StudentDashboardRoute
   StudentPendingRoute: typeof StudentPendingRoute
   StudentProfileRoute: typeof StudentProfileRoute
@@ -436,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeacherCoursesCourseIdRouteImport
       parentRoute: typeof TeacherCoursesRoute
     }
+    '/student/courses/$courseId': {
+      id: '/student/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/student/courses/$courseId'
+      preLoaderRoute: typeof StudentCoursesCourseIdRouteImport
+      parentRoute: typeof StudentCoursesRoute
+    }
     '/api/public/seed': {
       id: '/api/public/seed'
       path: '/api/public/seed'
@@ -465,6 +484,18 @@ const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
   AdminCoursesRouteChildren,
 )
 
+interface StudentCoursesRouteChildren {
+  StudentCoursesCourseIdRoute: typeof StudentCoursesCourseIdRoute
+}
+
+const StudentCoursesRouteChildren: StudentCoursesRouteChildren = {
+  StudentCoursesCourseIdRoute: StudentCoursesCourseIdRoute,
+}
+
+const StudentCoursesRouteWithChildren = StudentCoursesRoute._addFileChildren(
+  StudentCoursesRouteChildren,
+)
+
 interface TeacherCoursesRouteChildren {
   TeacherCoursesCourseIdRoute: typeof TeacherCoursesCourseIdRoute
 }
@@ -485,7 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
-  StudentCoursesRoute: StudentCoursesRoute,
+  StudentCoursesRoute: StudentCoursesRouteWithChildren,
   StudentDashboardRoute: StudentDashboardRoute,
   StudentPendingRoute: StudentPendingRoute,
   StudentProfileRoute: StudentProfileRoute,
