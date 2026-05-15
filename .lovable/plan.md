@@ -1,126 +1,102 @@
-# Rators Academy — LMS Build Plan
+# Rators Academy — Fixes + Full LMS Build
 
-## 1. Backend (Lovable Cloud / Supabase)
+## Part 1 — Fix demo auth (priority)
 
-Enable Lovable Cloud, then create schema via migration:
+**Problem:** Demo logins fail. The seed route exists but may not have run, and there's no guarantee profiles exist with the right role after first login.
 
-- `app_role` enum: `admin | teacher | student`
-- `profiles` (id PK→auth.users, full_name, role app_role, bio, avatar_url, status, created_at)
-- `courses` (id, title, description, teacher_id→profiles, created_at)
-- `enrollments` (id, student_id, course_id, progress int 0–100, enrolled_at)
-- `pending_tasks` (id, user_id, title, due_date, completed bool, role_target)
-- `has_role(uuid, app_role)` SECURITY DEFINER function (avoids RLS recursion)
-- Trigger `handle_new_user` to insert into `profiles` on signup
+**Fixes:**
+1. Run the seed flow server-side immediately (call admin createUser via service role, then upsert profiles with the matching role). Re-run idempotently to repair any partial state.
+2. Verify the `handle_new_user` trigger fires with `raw_user_meta_data.role` and that `profiles_self_read` RLS lets the user fetch their own row right after sign-in.
+3. In `src/lib/auth.tsx`: after `signIn`, await profile fetch, then `navigate(dashboardPathFor(profile.role))`. On `/login`, if already authenticated, redirect to the role dashboard.
+4. Confirm `RoleGuard` redirects mismatched roles to their own dashboard (already implemented; keep).
+5. Add `is_active` column on profiles; block sign-in (signOut + toast) if inactive.
 
-**RLS policies:**
-- profiles: self read/update; admins all (via `has_role`); teachers can read student profiles enrolled in their courses
-- courses: admins all; teachers manage own courses; students read courses they're enrolled in
-- enrollments: students read own; teachers read for own courses; admins all
-- pending_tasks: users read own; admins all
+## Part 2 — DB migration
 
-**Seed data** (via insert tool after migration):
-- 3 demo users created through Supabase Auth admin API in a one-shot server function (or manual seed). Since we can't call admin API from migration, seed approach: create users via `supabase.auth.admin.createUser` in a one-time `createServerFn` triggered manually OR document that the first run auto-seeds via a server route `/api/public/seed` (idempotent, guarded by a secret).
-- After users exist: insert profiles, 3 courses (assigned to teacher), enrollments for student with progress 30/65/90, 3–4 pending tasks per user.
+New columns:
+- `courses`: `cover_image_url text`, `status text default 'draft' check in ('draft','published')`
+- `profiles`: `is_active boolean default true`
 
-## 2. Design System
+New tables (per user spec): `sections`, `lessons`, `lesson_completions`, `activity_submissions`, `quiz_attempts`.
 
-Update `src/styles.css`:
-- Primary `#1A3DB5` (oklch equivalent) + glow/hover shades
-- Neutral white/light-gray surfaces
-- Add Plus Jakarta Sans (headings) + DM Sans (body) via Google Fonts link in `__root.tsx` head
-- Tailwind font tokens: `font-heading`, `font-sans`
-- Royal-blue gradient + soft shadow tokens for cards/CTAs
+Storage: bucket `submissions` (private) with RLS — students upload to `submissions/{student_id}/...`; teachers read files for lessons in their courses; admins full.
 
-## 3. Auth
+RLS summary (uses existing `has_role`):
+- sections/lessons: admin all; teacher all where parent course belongs to them; students SELECT where enrolled in parent course
+- lesson_completions: student own (CRUD); teacher SELECT for their courses; admin all
+- activity_submissions: student INSERT/SELECT own; teacher SELECT + UPDATE (grade/feedback/graded_at/graded_by) for their courses; admin all
+- quiz_attempts: student INSERT/SELECT own; teacher SELECT for their courses; admin all
 
-- `src/integrations/supabase/client.ts` (auto from Cloud)
-- `src/lib/auth.ts`: `useAuth` hook subscribing to `onAuthStateChange`, exposes `user`, `profile`, `role`, `loading`, `signIn`, `signOut`
-- Single `/login` route — "Welcome to Rators Academy" hero, email + password, subtle instructor/admin note
-- After sign-in, fetch profile.role → redirect to `/admin/dashboard | /teacher/dashboard | /student/dashboard`
+Helper SQL function `is_course_teacher(_user_id, _course_id)` (SECURITY DEFINER) to keep policies non-recursive.
 
-## 4. Routing (TanStack Start file routes)
+## Part 3 — Server functions (TanStack `createServerFn`)
 
-```
-src/routes/
-  __root.tsx                    (fonts, QueryClient, auth listener)
-  index.tsx                     (redirect to /login or role dashboard)
-  login.tsx
-  _admin.tsx                    (guard: role===admin else redirect)
-  _admin/admin.dashboard.tsx
-  _admin/admin.teachers.tsx
-  _admin/admin.students.tsx
-  _admin/admin.courses.tsx      (placeholder)
-  _admin/admin.settings.tsx     (placeholder)
-  _teacher.tsx                  (guard)
-  _teacher/teacher.dashboard.tsx
-  _teacher/teacher.courses.tsx
-  _teacher/teacher.students.tsx
-  _teacher/teacher.pending.tsx
-  _teacher/teacher.profile.tsx
-  _student.tsx                  (guard)
-  _student/student.dashboard.tsx
-  _student/student.courses.tsx
-  _student/student.progress.tsx
-  _student/student.pending.tsx
-  _student/student.profile.tsx
-```
+Files in `src/lib/`:
+- `courses.functions.ts` — list/create/update/delete courses, sections, lessons; reorder; publish toggle
+- `enrollments.functions.ts` — admin assign student↔course, teacher↔course
+- `student-course.functions.ts` — fetch course tree with completion flags; sequential-unlock check; mark video complete; submit activity (signed upload URL); submit quiz (score server-side); recompute enrollment progress
+- `grading.functions.ts` — list pending/graded submissions for teacher; submit grade+feedback
+- `admin.functions.ts` — extend with toggleActive, list courses summary (teacher name, student count, avg progress)
 
-Each guarded layout uses `beforeLoad` to check session + role; wrong role → redirect to their own dashboard. Loading spinner during auth hydration.
+All teacher/student fns use `requireSupabaseAuth`; admin-only fns guard with `assertAdmin` (already present pattern).
 
-## 5. Shared Layout Components
+## Part 4 — UI
 
-- `DashboardLayout` — sticky top bar (logo, user name, Logout) + collapsible Shadcn sidebar with role-specific items + `<Outlet />`
-- `RoleSidebar` (admin/teacher/student variants) with active route highlighting in royal blue
-- `StatCard`, `ProgressBar`, `CircularProgress`, `RoleBadge`, `UserTable`
+Keep existing royal blue / Plus Jakarta / DM Sans design. New screens:
 
-## 6. Admin Dashboard
+**Admin**
+- `/admin/courses` upgraded: table + "New course" dialog (title, description, cover URL, teacher select, status), edit/delete, "Open builder"
+- `/admin/courses/$courseId` Course Builder (sections + lessons CRUD, drag-reorder via order_index up/down arrows)
+- `/admin/users` (existing): show generated password in dialog with copy button (already returned by serverFn — surface it), Active toggle, "Assign to course" action
+- Dashboard: per-course summary cards (teacher, students, avg %)
 
-- Overview: 4 stat cards (students, teachers, courses, active enrollments) — counted via Supabase queries through `createServerFn` with `requireSupabaseAuth`
-- Create Teacher / Create Student forms → server fn calls `supabase.auth.admin.createUser` (admin client) with auto-generated 12-char password, returns password once shown in a dialog
-- Users table with role badges, status toggle, delete button (server fn)
+**Teacher**
+- `/teacher/courses` list (own courses) → opens same Course Builder route under `/teacher/courses/$courseId`
+- `/teacher/grading` Pending / Graded tabs; grade dialog (0–100 + feedback)
+- `/teacher/students` progress matrix (rows=students, cols=courses, cells=%)
 
-## 7. Teacher Dashboard
+**Student**
+- `/student/courses` cards with cover image + progress bar
+- `/student/courses/$courseId` Course Viewer:
+  - Left: collapsible sections/lessons with check + lock icons
+  - Main: video (YouTube embed) / activity (instructions + upload + show grade/feedback once graded) / quiz (one-question-at-a-time A/B/C/D, auto-submit, show score)
+  - "Mark as complete" for video lessons
+- `/student/progress` per-course → per-section → per-lesson breakdown
+- Dashboard: overall % (existing CircularProgress) + per-course bars
 
-- Greeting using profile.full_name
-- "My Courses" — real query `courses where teacher_id = me`
-- Pending tasks panel (mocked counts from `pending_tasks` where role_target='teacher')
-- Student progress table — join enrollments + profiles for teacher's courses
-- Profile editor (name, bio, avatar UI placeholder — updates `profiles`)
+Shared components: `LessonSidebar`, `VideoPlayer`, `ActivitySubmit`, `QuizRunner`, `CourseBuilder`, `GradeDialog`.
 
-## 8. Student Dashboard
+## Part 5 — Seed
 
-- Greeting + motivational copy
-- Enrolled course cards (title, progress bar, last activity)
-- Overall completion CircularProgress (avg of enrollments.progress)
-- Pending tasks list
-- Profile editor
+Extend `/api/public/seed`:
+- Ensure 3 demo users (existing)
+- Create courses **English B1 — Grammar & Writing** (2 sections, 5 lessons mixed video/activity/quiz) and **Conversation Club Prep** (1 section, 3 lessons)
+- Assign to Ms. García, status=published, with cover image URLs
+- Enroll Juan in both; insert `lesson_completions` for ~40% of lessons
+- Insert 2 ungraded `activity_submissions` for Juan (sample file URL placeholders)
+- Insert 1 completed `quiz_attempts` row with computed score
+- Recompute `enrollments.progress`
 
-## 9. Technical Notes
+Idempotent (skip if already present by title/lesson key).
 
-- TanStack Start (NOT Vite + React Router — template uses TanStack)
-- All data fetching via `createServerFn` + `requireSupabaseAuth`; admin operations via `supabaseAdmin`
-- `attachSupabaseAuth` already wired in `src/start.ts` (verify)
-- Mobile responsive via Tailwind (sidebar → Sheet on mobile)
-- Toast notifications (sonner) for create/delete actions
-- Loading spinner during `auth.loading`
+## Technical notes
 
-## 10. Build Order
+- All server fns return plain DTOs (no Supabase row instances).
+- Sequential unlock: a lesson is unlocked iff all earlier lessons in the same section (by `order_index`) are in `lesson_completions` for the current student.
+- Activity uploads: serverFn returns a signed upload URL for `submissions/{userId}/{lessonId}/{filename}`; client PUTs file; serverFn records the resulting path.
+- Quiz scoring: server compares submitted answers to `lessons.content.questions[i].correct`; never trust client-computed score.
+- Use `supabase--migration` for schema, then `supabase--insert` only if needed for seed (preferred: keep seed in `/api/public/seed` for repeatability).
+- Keep edits surgical — do not touch generated files (`client.ts`, `types.ts`, `routeTree.gen.ts`).
 
-1. Enable Lovable Cloud
-2. Migration: enum, tables, has_role, trigger, RLS policies
-3. Design tokens + fonts
-4. Auth hook + login page
-5. Role-guarded layouts + sidebar/topbar
-6. Admin dashboard (stats + user management server fns)
-7. Teacher dashboard
-8. Student dashboard
-9. Seed users + mock data (server fn or `/api/public/seed`)
-10. QA: login as each demo user, verify guards and royal-blue theming
+## Build order
 
-## Open question
+1. Migration (schema + RLS + storage bucket)
+2. Re-run seed to fix demo users
+3. Server functions (courses/enrollments/student-course/grading)
+4. Admin Course Builder + user mgmt enhancements
+5. Teacher courses/grading/students
+6. Student course viewer + progress
+7. Extend seed with courses/sections/lessons/submissions/attempts
+8. Smoke-test all three demo logins end-to-end
 
-Two seeding options — pick one:
-- **A)** Auto-seed on first visit via idempotent `/api/public/seed?token=...` route using service role (I'll wire this so the 3 demo accounts exist immediately).
-- **B)** I create the 3 users manually via Cloud's Users panel after build, then seed profiles/courses via SQL.
-
-I'll default to **A** unless you prefer B.
+Approve to proceed.
