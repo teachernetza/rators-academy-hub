@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TeacherStudentsRouteImport } from './routes/teacher/students'
 import { Route as TeacherProfileRouteImport } from './routes/teacher/profile'
 import { Route as TeacherPendingRouteImport } from './routes/teacher/pending'
+import { Route as TeacherGradingRouteImport } from './routes/teacher/grading'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher/dashboard'
 import { Route as TeacherCoursesRouteImport } from './routes/teacher/courses'
 import { Route as StudentProgressRouteImport } from './routes/student/progress'
@@ -26,7 +27,10 @@ import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
+import { Route as TeacherCoursesCourseIdRouteImport } from './routes/teacher/courses.$courseId'
+import { Route as StudentCoursesCourseIdRouteImport } from './routes/student/courses.$courseId'
 import { Route as ApiPublicSeedRouteImport } from './routes/api/public/seed'
+import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses.$courseId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -51,6 +55,11 @@ const TeacherProfileRoute = TeacherProfileRouteImport.update({
 const TeacherPendingRoute = TeacherPendingRouteImport.update({
   id: '/teacher/pending',
   path: '/teacher/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherGradingRoute = TeacherGradingRouteImport.update({
+  id: '/teacher/grading',
+  path: '/teacher/grading',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeacherDashboardRoute = TeacherDashboardRouteImport.update({
@@ -113,72 +122,99 @@ const AdminCoursesRoute = AdminCoursesRouteImport.update({
   path: '/admin/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeacherCoursesCourseIdRoute = TeacherCoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => TeacherCoursesRoute,
+} as any)
+const StudentCoursesCourseIdRoute = StudentCoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => StudentCoursesRoute,
+} as any)
 const ApiPublicSeedRoute = ApiPublicSeedRouteImport.update({
   id: '/api/public/seed',
   path: '/api/public/seed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCoursesCourseIdRoute = AdminCoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => AdminCoursesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
-  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
-  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/student/courses': typeof StudentCoursesRoute
+  '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
-  '/teacher/courses': typeof TeacherCoursesRoute
+  '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
+  '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,10 +233,14 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
+    | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
+    | '/teacher/courses/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -217,10 +257,14 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
+    | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
+    | '/teacher/courses/$courseId'
   id:
     | '__root__'
     | '/'
@@ -237,27 +281,32 @@ export interface FileRouteTypes {
     | '/student/progress'
     | '/teacher/courses'
     | '/teacher/dashboard'
+    | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/courses/$courseId'
+    | '/teacher/courses/$courseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
-  AdminCoursesRoute: typeof AdminCoursesRoute
+  AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
-  StudentCoursesRoute: typeof StudentCoursesRoute
+  StudentCoursesRoute: typeof StudentCoursesRouteWithChildren
   StudentDashboardRoute: typeof StudentDashboardRoute
   StudentPendingRoute: typeof StudentPendingRoute
   StudentProfileRoute: typeof StudentProfileRoute
   StudentProgressRoute: typeof StudentProgressRoute
-  TeacherCoursesRoute: typeof TeacherCoursesRoute
+  TeacherCoursesRoute: typeof TeacherCoursesRouteWithChildren
   TeacherDashboardRoute: typeof TeacherDashboardRoute
+  TeacherGradingRoute: typeof TeacherGradingRoute
   TeacherPendingRoute: typeof TeacherPendingRoute
   TeacherProfileRoute: typeof TeacherProfileRoute
   TeacherStudentsRoute: typeof TeacherStudentsRoute
@@ -299,6 +348,13 @@ declare module '@tanstack/react-router' {
       path: '/teacher/pending'
       fullPath: '/teacher/pending'
       preLoaderRoute: typeof TeacherPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/grading': {
+      id: '/teacher/grading'
+      path: '/teacher/grading'
+      fullPath: '/teacher/grading'
+      preLoaderRoute: typeof TeacherGradingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/teacher/dashboard': {
@@ -385,6 +441,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/teacher/courses/$courseId': {
+      id: '/teacher/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/teacher/courses/$courseId'
+      preLoaderRoute: typeof TeacherCoursesCourseIdRouteImport
+      parentRoute: typeof TeacherCoursesRoute
+    }
+    '/student/courses/$courseId': {
+      id: '/student/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/student/courses/$courseId'
+      preLoaderRoute: typeof StudentCoursesCourseIdRouteImport
+      parentRoute: typeof StudentCoursesRoute
+    }
     '/api/public/seed': {
       id: '/api/public/seed'
       path: '/api/public/seed'
@@ -392,24 +462,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/courses/$courseId': {
+      id: '/admin/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/admin/courses/$courseId'
+      preLoaderRoute: typeof AdminCoursesCourseIdRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
   }
 }
+
+interface AdminCoursesRouteChildren {
+  AdminCoursesCourseIdRoute: typeof AdminCoursesCourseIdRoute
+}
+
+const AdminCoursesRouteChildren: AdminCoursesRouteChildren = {
+  AdminCoursesCourseIdRoute: AdminCoursesCourseIdRoute,
+}
+
+const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
+  AdminCoursesRouteChildren,
+)
+
+interface StudentCoursesRouteChildren {
+  StudentCoursesCourseIdRoute: typeof StudentCoursesCourseIdRoute
+}
+
+const StudentCoursesRouteChildren: StudentCoursesRouteChildren = {
+  StudentCoursesCourseIdRoute: StudentCoursesCourseIdRoute,
+}
+
+const StudentCoursesRouteWithChildren = StudentCoursesRoute._addFileChildren(
+  StudentCoursesRouteChildren,
+)
+
+interface TeacherCoursesRouteChildren {
+  TeacherCoursesCourseIdRoute: typeof TeacherCoursesCourseIdRoute
+}
+
+const TeacherCoursesRouteChildren: TeacherCoursesRouteChildren = {
+  TeacherCoursesCourseIdRoute: TeacherCoursesCourseIdRoute,
+}
+
+const TeacherCoursesRouteWithChildren = TeacherCoursesRoute._addFileChildren(
+  TeacherCoursesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
-  AdminCoursesRoute: AdminCoursesRoute,
+  AdminCoursesRoute: AdminCoursesRouteWithChildren,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
-  StudentCoursesRoute: StudentCoursesRoute,
+  StudentCoursesRoute: StudentCoursesRouteWithChildren,
   StudentDashboardRoute: StudentDashboardRoute,
   StudentPendingRoute: StudentPendingRoute,
   StudentProfileRoute: StudentProfileRoute,
   StudentProgressRoute: StudentProgressRoute,
-  TeacherCoursesRoute: TeacherCoursesRoute,
+  TeacherCoursesRoute: TeacherCoursesRouteWithChildren,
   TeacherDashboardRoute: TeacherDashboardRoute,
+  TeacherGradingRoute: TeacherGradingRoute,
   TeacherPendingRoute: TeacherPendingRoute,
   TeacherProfileRoute: TeacherProfileRoute,
   TeacherStudentsRoute: TeacherStudentsRoute,
@@ -418,13 +532,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

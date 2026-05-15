@@ -25,6 +25,7 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/teacher/courses", label: "My Courses", icon: BookOpen },
     { to: "/teacher/students", label: "Students", icon: Users },
+    { to: "/teacher/grading", label: "Grading", icon: ClipboardList },
     { to: "/teacher/pending", label: "Pending", icon: ClipboardList },
     { to: "/teacher/profile", label: "Profile", icon: UserCircle },
   ],

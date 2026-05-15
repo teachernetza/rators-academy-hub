@@ -1,49 +1,57 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RoleGuard } from "@/components/role-guard";
-import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { RoleGuard } from "@/components/role-guard";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { teacherGetStudentMatrix } from "@/lib/grading.functions";
 
 export const Route = createFileRoute("/teacher/students")({
-  component: () => <RoleGuard role="teacher"><TeacherStudents /></RoleGuard>,
+  component: () => <RoleGuard role="teacher"><Page /></RoleGuard>,
 });
 
-function TeacherStudents() {
-  const { profile } = useAuth();
-  const data = useQuery({
-    queryKey: ["teacher", "students", profile?.id],
-    enabled: !!profile,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("enrollments")
-        .select("progress, courses!inner(title,teacher_id), profiles!enrollments_student_id_fkey(full_name)")
-        .eq("courses.teacher_id", profile!.id);
-      return (data ?? []) as any[];
-    },
-  });
+function Page() {
+  const fn = useServerFn(teacherGetStudentMatrix);
+  const q = useQuery({ queryKey: ["teacher-matrix"], queryFn: () => fn({}) });
+  const data = q.data ?? { courses: [], students: [], cells: {} };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-3xl font-bold">Students</h1>
-        <p className="mt-1 text-muted-foreground">Progress across your courses.</p>
+        <p className="mt-1 text-muted-foreground">Progress per student per course.</p>
       </div>
-      <Card className="p-6 space-y-3">
-        {(data.data ?? []).map((row, i) => (
-          <div key={i} className="rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{row.profiles?.full_name}</p>
-                <p className="text-xs text-muted-foreground">{row.courses?.title}</p>
-              </div>
-              <span className="text-sm font-semibold text-primary">{row.progress}%</span>
-            </div>
-            <Progress value={row.progress} className="mt-3" />
-          </div>
-        ))}
-        {data.data?.length === 0 && <p className="text-sm text-muted-foreground">No students yet.</p>}
+      <Card className="p-0 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Student</TableHead>
+              {data.courses.map((c: any) => <TableHead key={c.id} className="text-center">{c.title}</TableHead>)}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.students.map((s: any) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium">{s.full_name}</TableCell>
+                {data.courses.map((c: any) => {
+                  const v = data.cells[s.id]?.[c.id];
+                  return (
+                    <TableCell key={c.id} className="text-center">
+                      {v != null ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-sm font-semibold text-primary">{v}%</span>
+                        </span>
+                      ) : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+            {data.students.length === 0 && (
+              <TableRow><TableCell colSpan={data.courses.length + 1} className="text-center text-muted-foreground py-8">No enrolled students yet.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );
