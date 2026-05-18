@@ -127,7 +127,10 @@ export function makeUsersPage(role: Role, title: string) {
                   <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="capitalize">{u.role}</Badge></TableCell>
                   <TableCell>
-                    <Badge className="capitalize" variant={u.status === "active" ? "default" : "outline"}>{u.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={u.is_active !== false} onCheckedChange={(v) => toggleM.mutate({ id: u.id, is_active: v })} />
+                      <span className="text-xs text-muted-foreground">{u.is_active !== false ? "Active" : "Inactive"}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
