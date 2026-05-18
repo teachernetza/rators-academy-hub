@@ -23,6 +23,7 @@ export function makeUsersPage(role: Role, title: string) {
     const fetchUsers = useServerFn(adminListUsers);
     const createUser = useServerFn(adminCreateUser);
     const deleteUser = useServerFn(adminDeleteUser);
+    const toggleActive = useServerFn(adminToggleActive);
 
     const usersQ = useQuery({ queryKey: ["admin", "users"], queryFn: () => fetchUsers({}) });
     const filtered = (usersQ.data ?? []).filter((u) => u.role === role);
