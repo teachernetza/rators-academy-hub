@@ -69,8 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    if (data.user) {
+      const { data: prof } = await supabase.from("profiles").select("is_active").eq("id", data.user.id).maybeSingle();
+      if (prof && prof.is_active === false) {
+        await supabase.auth.signOut();
+        return { error: "Your account has been deactivated. Contact an administrator." };
+      }
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
