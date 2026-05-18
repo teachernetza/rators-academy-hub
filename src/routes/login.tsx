@@ -106,7 +106,28 @@ function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-xs">
+            <p className="mb-2 font-semibold text-foreground">Demo accounts</p>
+            <div className="space-y-1.5 text-muted-foreground">
+              {[
+                { label: "Admin", e: "admin@ratorsacademy.com", p: "Admin1234!" },
+                { label: "Teacher", e: "teacher@ratorsacademy.com", p: "Teacher1234!" },
+                { label: "Student", e: "student@ratorsacademy.com", p: "Student1234!" },
+              ].map((d) => (
+                <button
+                  key={d.label}
+                  type="button"
+                  onClick={() => { setEmail(d.e); setPassword(d.p); }}
+                  className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left hover:bg-accent/50 transition-colors"
+                >
+                  <span className="font-medium text-foreground">{d.label}</span>
+                  <span className="font-mono text-[10px]">{d.e}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Instructors and administrators can also sign in here.
           </p>
         </Card>
