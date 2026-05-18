@@ -10,8 +10,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Copy, Loader2 } from "lucide-react";
-import { adminListUsers, adminCreateUser, adminDeleteUser } from "@/lib/admin.functions";
+import { adminListUsers, adminCreateUser, adminDeleteUser, adminToggleActive } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
 type Role = "teacher" | "student";
@@ -22,6 +23,7 @@ export function makeUsersPage(role: Role, title: string) {
     const fetchUsers = useServerFn(adminListUsers);
     const createUser = useServerFn(adminCreateUser);
     const deleteUser = useServerFn(adminDeleteUser);
+    const toggleActive = useServerFn(adminToggleActive);
 
     const usersQ = useQuery({ queryKey: ["admin", "users"], queryFn: () => fetchUsers({}) });
     const filtered = (usersQ.data ?? []).filter((u) => u.role === role);
@@ -49,6 +51,12 @@ export function makeUsersPage(role: Role, title: string) {
         toast.success("Deleted");
         qc.invalidateQueries({ queryKey: ["admin"] });
       },
+      onError: (e: any) => toast.error(e.message ?? "Failed"),
+    });
+
+    const toggleM = useMutation({
+      mutationFn: (vars: { id: string; is_active: boolean }) => toggleActive({ data: vars }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
       onError: (e: any) => toast.error(e.message ?? "Failed"),
     });
 
@@ -119,7 +127,10 @@ export function makeUsersPage(role: Role, title: string) {
                   <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="capitalize">{u.role}</Badge></TableCell>
                   <TableCell>
-                    <Badge className="capitalize" variant={u.status === "active" ? "default" : "outline"}>{u.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={u.is_active !== false} onCheckedChange={(v) => toggleM.mutate({ id: u.id, is_active: v })} />
+                      <span className="text-xs text-muted-foreground">{u.is_active !== false ? "Active" : "Inactive"}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
