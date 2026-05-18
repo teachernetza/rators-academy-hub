@@ -10,8 +10,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Copy, Loader2 } from "lucide-react";
-import { adminListUsers, adminCreateUser, adminDeleteUser } from "@/lib/admin.functions";
+import { adminListUsers, adminCreateUser, adminDeleteUser, adminToggleActive } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
 type Role = "teacher" | "student";
