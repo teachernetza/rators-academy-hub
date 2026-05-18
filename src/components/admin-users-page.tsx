@@ -54,6 +54,12 @@ export function makeUsersPage(role: Role, title: string) {
       onError: (e: any) => toast.error(e.message ?? "Failed"),
     });
 
+    const toggleM = useMutation({
+      mutationFn: (vars: { id: string; is_active: boolean }) => toggleActive({ data: vars }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
+      onError: (e: any) => toast.error(e.message ?? "Failed"),
+    });
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
