@@ -12,6 +12,7 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   status: string;
+  is_active: boolean;
 }
 
 interface AuthContextValue {
