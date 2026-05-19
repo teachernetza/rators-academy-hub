@@ -90,6 +90,22 @@
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.20 0.04 265);
 
+  --info: oklch(0.62 0.14 230);
+  --info-foreground: oklch(0.99 0 0);
+
+  --violet: oklch(0.55 0.20 295);
+  --violet-foreground: oklch(0.99 0 0);
+
+  --rose: oklch(0.62 0.20 12);
+  --rose-foreground: oklch(0.99 0 0);
+
+  --teal: oklch(0.62 0.12 195);
+  --teal-foreground: oklch(0.99 0 0);
+
+  --gradient-violet: linear-gradient(135deg, oklch(0.55 0.20 295), oklch(0.65 0.20 305));
+  --gradient-teal: linear-gradient(135deg, oklch(0.62 0.12 195), oklch(0.70 0.13 185));
+  --gradient-amber: linear-gradient(135deg, oklch(0.78 0.16 75), oklch(0.82 0.16 65));
+
   --border: oklch(0.92 0.012 255);
   --input: oklch(0.92 0.012 255);
   --ring: oklch(0.42 0.19 268);
