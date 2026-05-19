@@ -13,8 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Settings2, Trash2, Loader2, BookOpen, Users } from "lucide-react";
 import { listCourses, createCourse, deleteCourse, updateCourse } from "@/lib/courses.functions";
-import { adminListByRole, adminEnrollStudent } from "@/lib/admin.functions";
+import { adminListByRole } from "@/lib/admin.functions";
+import { sendInvitation } from "@/lib/invitations.functions";
 import { toast } from "sonner";
+import { Textarea as TextareaUI } from "@/components/ui/textarea";
+import { UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/admin/courses")({
   component: () => <RoleGuard role="admin"><AdminCoursesPage /></RoleGuard>,
