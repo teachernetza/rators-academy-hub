@@ -180,7 +180,7 @@ function InviteDialog({ courseId }: { courseId: string }) {
           </div>
           <div className="space-y-2">
             <Label>Message (optional)</Label>
-            <TextareaUI rows={2} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Looking forward to having you in this class!" />
+            <Textarea rows={2} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Looking forward to having you in this class!" />
           </div>
           <DialogFooter>
             <Button onClick={() => m.mutate()} disabled={!inviteeId || m.isPending}>
