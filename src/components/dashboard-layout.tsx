@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notification-bell";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -93,6 +94,7 @@ export function DashboardLayout({ role, children }: { role: AppRole; children: R
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <div className="hidden sm:block text-right leading-tight">
               <p className="text-sm font-semibold text-foreground">{profile?.full_name ?? "—"}</p>
               <p className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</p>

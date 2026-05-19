@@ -60,9 +60,9 @@ function TeacherDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="My Courses" value={courses.data?.length ?? 0} icon={BookOpen} accent />
-        <StatCard label="Pending tasks" value={pendingCount} icon={ClipboardList} />
-        <StatCard label="Enrolled students" value={progressList.data?.length ?? 0} icon={Users} />
+        <StatCard label="My Courses" value={courses.data?.length ?? 0} icon={BookOpen} accent tone="primary" />
+        <StatCard label="Pending tasks" value={pendingCount} icon={ClipboardList} accent tone="amber" />
+        <StatCard label="Enrolled students" value={progressList.data?.length ?? 0} icon={Users} accent tone="teal" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

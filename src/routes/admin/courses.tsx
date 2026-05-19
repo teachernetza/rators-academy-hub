@@ -13,8 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Settings2, Trash2, Loader2, BookOpen, Users } from "lucide-react";
 import { listCourses, createCourse, deleteCourse, updateCourse } from "@/lib/courses.functions";
-import { adminListByRole, adminEnrollStudent } from "@/lib/admin.functions";
+import { adminListByRole } from "@/lib/admin.functions";
+import { sendInvitation } from "@/lib/invitations.functions";
 import { toast } from "sonner";
+import { UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/admin/courses")({
   component: () => <RoleGuard role="admin"><AdminCoursesPage /></RoleGuard>,
@@ -108,7 +110,7 @@ function AdminCoursesPage() {
                 <Link to="/admin/courses/$courseId" params={{ courseId: c.id }} className="flex-1">
                   <Button variant="outline" size="sm" className="w-full"><Settings2 className="mr-2 h-4 w-4" />Open builder</Button>
                 </Link>
-                <EnrollDialog courseId={c.id} />
+                <InviteDialog courseId={c.id} />
                 <Button size="icon" variant="ghost" onClick={() => togglePub.mutate({ id: c.id, status: c.status === "published" ? "draft" : "published" })}>
                   <BookOpen className={`h-4 w-4 ${c.status === "published" ? "text-primary" : "text-muted-foreground"}`} />
                 </Button>
@@ -127,31 +129,64 @@ function AdminCoursesPage() {
   );
 }
 
-function EnrollDialog({ courseId }: { courseId: string }) {
+function InviteDialog({ courseId }: { courseId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const studentsFn = useServerFn(adminListByRole);
-  const enroll = useServerFn(adminEnrollStudent);
-  const students = useQuery({ queryKey: ["students-list"], queryFn: () => studentsFn({ data: { role: "student" } }), enabled: open });
-  const [studentId, setStudentId] = useState("");
+  const [role, setRole] = useState<"student" | "teacher">("student");
+  const [inviteeId, setInviteeId] = useState("");
+  const [message, setMessage] = useState("");
+  const listFn = useServerFn(adminListByRole);
+  const invite = useServerFn(sendInvitation);
+  const people = useQuery({
+    queryKey: ["people-list", role],
+    queryFn: () => listFn({ data: { role } }),
+    enabled: open,
+  });
   const m = useMutation({
-    mutationFn: () => enroll({ data: { student_id: studentId, course_id: courseId } }),
-    onSuccess: () => { toast.success("Enrolled"); setOpen(false); qc.invalidateQueries({ queryKey: ["admin-courses"] }); },
+    mutationFn: () => invite({ data: { course_id: courseId, invitee_id: inviteeId, role, message: message || undefined } }),
+    onSuccess: () => {
+      toast.success("Invitation sent");
+      setOpen(false); setInviteeId(""); setMessage("");
+      qc.invalidateQueries({ queryKey: ["admin-courses"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button size="icon" variant="ghost"><Users className="h-4 w-4" /></Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost" title="Invite to course"><UserPlus className="h-4 w-4" /></Button>
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Enroll a student</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Invite to course</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <Select value={studentId} onValueChange={setStudentId}>
-            <SelectTrigger><SelectValue placeholder="Pick student" /></SelectTrigger>
-            <SelectContent>
-              {(students.data ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <DialogFooter><Button onClick={() => m.mutate()} disabled={!studentId || m.isPending}>Enroll</Button></DialogFooter>
+          <div className="space-y-2">
+            <Label>Invite as</Label>
+            <Select value={role} onValueChange={(v) => { setRole(v as any); setInviteeId(""); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="student">Student (enroll)</SelectItem>
+                <SelectItem value="teacher">Teacher (assign)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Person</Label>
+            <Select value={inviteeId} onValueChange={setInviteeId}>
+              <SelectTrigger><SelectValue placeholder={`Pick a ${role}`} /></SelectTrigger>
+              <SelectContent>
+                {(people.data ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Message (optional)</Label>
+            <Textarea rows={2} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Looking forward to having you in this class!" />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => m.mutate()} disabled={!inviteeId || m.isPending}>
+              {m.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Send invitation
+            </Button>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

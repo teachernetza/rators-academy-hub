@@ -32,6 +32,14 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-violet: var(--violet);
+  --color-violet-foreground: var(--violet-foreground);
+  --color-rose: var(--rose);
+  --color-rose-foreground: var(--rose-foreground);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -82,6 +90,22 @@
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.20 0.04 265);
 
+  --info: oklch(0.62 0.14 230);
+  --info-foreground: oklch(0.99 0 0);
+
+  --violet: oklch(0.55 0.20 295);
+  --violet-foreground: oklch(0.99 0 0);
+
+  --rose: oklch(0.62 0.20 12);
+  --rose-foreground: oklch(0.99 0 0);
+
+  --teal: oklch(0.62 0.12 195);
+  --teal-foreground: oklch(0.99 0 0);
+
+  --gradient-violet: linear-gradient(135deg, oklch(0.55 0.20 295), oklch(0.65 0.20 305));
+  --gradient-teal: linear-gradient(135deg, oklch(0.62 0.12 195), oklch(0.70 0.13 185));
+  --gradient-amber: linear-gradient(135deg, oklch(0.78 0.16 75), oklch(0.82 0.16 65));
+
   --border: oklch(0.92 0.012 255);
   --input: oklch(0.92 0.012 255);
   --ring: oklch(0.42 0.19 268);
@@ -123,6 +147,14 @@
   --success-foreground: oklch(0.98 0 0);
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.15 0.02 265);
+  --info: oklch(0.68 0.14 230);
+  --info-foreground: oklch(0.15 0.02 265);
+  --violet: oklch(0.65 0.20 295);
+  --violet-foreground: oklch(0.15 0.02 265);
+  --rose: oklch(0.68 0.20 12);
+  --rose-foreground: oklch(0.15 0.02 265);
+  --teal: oklch(0.68 0.12 195);
+  --teal-foreground: oklch(0.15 0.02 265);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.62 0.22 268);

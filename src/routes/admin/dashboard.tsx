@@ -26,10 +26,10 @@ function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Students" value={stats.data?.students ?? "—"} icon={Users} accent />
-        <StatCard label="Teachers" value={stats.data?.teachers ?? "—"} icon={GraduationCap} />
-        <StatCard label="Courses" value={stats.data?.courses ?? "—"} icon={BookOpen} />
-        <StatCard label="Active Enrollments" value={stats.data?.enrollments ?? "—"} icon={Activity} />
+        <StatCard label="Students" value={stats.data?.students ?? "—"} icon={Users} accent tone="primary" />
+        <StatCard label="Teachers" value={stats.data?.teachers ?? "—"} icon={GraduationCap} accent tone="violet" />
+        <StatCard label="Courses" value={stats.data?.courses ?? "—"} icon={BookOpen} accent tone="teal" />
+        <StatCard label="Active Enrollments" value={stats.data?.enrollments ?? "—"} icon={Activity} accent tone="amber" />
       </div>
 
       <Card className="p-6">
