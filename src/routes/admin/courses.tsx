@@ -16,7 +16,6 @@ import { listCourses, createCourse, deleteCourse, updateCourse } from "@/lib/cou
 import { adminListByRole } from "@/lib/admin.functions";
 import { sendInvitation } from "@/lib/invitations.functions";
 import { toast } from "sonner";
-import { Textarea as TextareaUI } from "@/components/ui/textarea";
 import { UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/admin/courses")({
