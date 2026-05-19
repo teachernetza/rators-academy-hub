@@ -149,6 +149,64 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          invitee_id: string
+          message: string | null
+          responded_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          invitee_id: string
+          message?: string | null
+          responded_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invitee_id?: string
+          message?: string | null
+          responded_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_completions: {
         Row: {
           completed_at: string
