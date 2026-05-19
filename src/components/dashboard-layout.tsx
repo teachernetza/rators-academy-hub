@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notification-bell";
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
