@@ -147,6 +147,14 @@
   --success-foreground: oklch(0.98 0 0);
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.15 0.02 265);
+  --info: oklch(0.68 0.14 230);
+  --info-foreground: oklch(0.15 0.02 265);
+  --violet: oklch(0.65 0.20 295);
+  --violet-foreground: oklch(0.15 0.02 265);
+  --rose: oklch(0.68 0.20 12);
+  --rose-foreground: oklch(0.15 0.02 265);
+  --teal: oklch(0.68 0.12 195);
+  --teal-foreground: oklch(0.15 0.02 265);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.62 0.22 268);
