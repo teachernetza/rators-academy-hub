@@ -111,7 +111,7 @@ function AdminCoursesPage() {
                 <Link to="/admin/courses/$courseId" params={{ courseId: c.id }} className="flex-1">
                   <Button variant="outline" size="sm" className="w-full"><Settings2 className="mr-2 h-4 w-4" />Open builder</Button>
                 </Link>
-                <EnrollDialog courseId={c.id} />
+                <InviteDialog courseId={c.id} />
                 <Button size="icon" variant="ghost" onClick={() => togglePub.mutate({ id: c.id, status: c.status === "published" ? "draft" : "published" })}>
                   <BookOpen className={`h-4 w-4 ${c.status === "published" ? "text-primary" : "text-muted-foreground"}`} />
                 </Button>
