@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "vite build --config vite.config.vercel.ts",
+  "installCommand": "bun install",
+  "framework": null
+}
