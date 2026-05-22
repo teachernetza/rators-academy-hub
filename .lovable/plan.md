@@ -1,104 +1,47 @@
+## What's happening
 
-# Deploy Rators Academy to Vercel
+The screen you see is **our own branded error page** (defined in `src/lib/error-page.ts`). It's returned by the request middleware in `src/start.ts`:
 
-## Why it's currently 404'ing
-
-The project is configured for **Cloudflare Workers**, not Vercel:
-- `wrangler.jsonc` declares `main: src/server.ts` (a Worker entry)
-- `vite.config.ts` uses `@lovable.dev/vite-tanstack-config`, which includes the Cloudflare Vite plugin
-- `src/server.ts` wraps the TanStack SSR handler in a Worker `fetch` export
-
-Vercel doesn't know about any of that. When you push to Vercel it builds only static client assets, so:
-- Every route except `/` returns 404 on refresh
-- All `createServerFn` calls (login, dashboards, invitations, seed, grading) hit nothing → app appears to never load
-- No service-role env vars are set, so even if it ran, Supabase admin operations would fail
-
-Adding a `.env` file to the deployment does not help — the runtime itself is missing.
-
-## What I'll change
-
-### 1. Switch the build target to Vercel
-
-- Replace `vite.config.ts` to use the **Vercel** TanStack Start target instead of the Cloudflare one:
-  ```ts
-  import { defineConfig } from "vite";
-  import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-  import viteReact from "@vitejs/plugin-react";
-  import tailwindcss from "@tailwindcss/vite";
-  import tsConfigPaths from "vite-tsconfig-paths";
-
-  export default defineConfig({
-    plugins: [
-      tsConfigPaths(),
-      tailwindcss(),
-      tanstackStart({ target: "vercel" }),
-      viteReact(),
-    ],
-  });
-  ```
-- Add the missing plugins as deps: `bun add -d @tanstack/react-start @vitejs/plugin-react @tailwindcss/vite vite-tsconfig-paths vite`
-- Remove the Lovable-bundled Cloudflare wrapper from the deployed build path
-
-### 2. Replace the Worker entry
-
-- Delete `wrangler.jsonc`
-- Replace `src/server.ts` with a Vercel-compatible entry — TanStack Start's `vercel` target generates a Node handler automatically, so `src/server.ts` becomes a simple re-export of the SSR handler (or is removed entirely; the `vercel` adapter wires the entry)
-- Keep our SSR error wrapper logic as middleware *inside* a request handler instead of a Worker `fetch` export
-
-### 3. Add a Vercel project config
-
-Create `vercel.json`:
-```json
-{
-  "framework": null,
-  "buildCommand": "bun run build",
-  "outputDirectory": ".vercel/output",
-  "installCommand": "bun install"
-}
+```text
+SSR request → errorMiddleware.next() throws → middleware logs error + returns renderErrorPage()
 ```
-TanStack's Vercel target outputs to `.vercel/output` which Vercel auto-detects.
 
-### 4. Set env vars in Vercel (you do this in the dashboard)
+So:
+- Vercel **is** running our app (build succeeded, function deployed).
+- Env vars **are** reaching the function (otherwise the supabase admin client would throw a different message we'd see in build, not at request time).
+- Some code path is throwing during server-side rendering of `/` or `/login`.
 
-In **Vercel → Project → Settings → Environment Variables**, add (for Production + Preview + Development):
+The original stack is `console.error`-ed inside that middleware — it lands in **Vercel's runtime logs**, which I can't read from here.
 
-| Name | Value |
-|---|---|
-| `VITE_SUPABASE_URL` | `https://cgbmwhafnfccdqsinndj.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | (your anon key from `.env`) |
-| `VITE_SUPABASE_PROJECT_ID` | `cgbmwhafnfccdqsinndj` |
-| `SUPABASE_URL` | same as above |
-| `SUPABASE_PUBLISHABLE_KEY` | same anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | **service role key** (get from Lovable Cloud → Backend → API keys) |
+## Step 1 — Get the real error (you, ~1 min)
 
-Then redeploy.
+In Vercel:
+1. Open your project → **Logs** tab (or **Deployments → latest → Functions → Runtime Logs**).
+2. Refresh the broken URL once.
+3. Copy the most recent red/error line plus the stack trace underneath and paste it in chat.
 
-### 5. Fix the Lovable preview "not preloading"
+If nothing shows under Runtime Logs, try **Functions → `index` (or `_server`) → Logs**.
 
-This is almost certainly the recursive-RLS regression resurfacing or a stale dev server. After the migration I'll:
-- Restart the dev server
-- Hit `/login` with the demo admin and verify the session loads
-- Check console + server logs for any 401/500
+## Step 2 — Most likely causes (ranked, I'll fix whichever matches)
 
-## Important caveats
+| # | Cause | Symptom in logs | Fix |
+|---|---|---|---|
+| 1 | `attachSupabaseAuth` middleware calling `supabase.auth.getSession()` on the server where `localStorage` storage is undefined and something throws | `TypeError` mentioning `storage` or `getSession` | Make the attacher no-op on the server (it already should — verify) |
+| 2 | A route loader / component touches `window`, `document`, or `localStorage` during SSR | `ReferenceError: window is not defined` | Wrap the offending access in `useEffect` or `<ClientOnly>` |
+| 3 | Supabase client proxy throws because `VITE_SUPABASE_URL` wasn't inlined at Vercel build time | `Missing Supabase environment variable(s)` | Re-check env-var **scope** (must be ticked for Production at build time, not just runtime — Vercel inlines `VITE_*` at build) and **Redeploy** without cache |
+| 4 | Vercel target output mismatch — `vercel.json` points at `.vercel/output` but the build emitted to `dist/` | 404 with no error log | Update `vercel.json` outputDirectory, or remove it and let TanStack's vercel preset handle it |
+| 5 | `@tanstack/react-start` vercel preset version mismatch | Module-init crash on first request | Pin to a known-good version |
 
-- **`process.env` at runtime works differently on Vercel vs Cloudflare.** Cloudflare injects env per request; Vercel exposes `process.env` natively in Node. Our code already reads env *inside* `.handler()` bodies, so this should Just Work — but I'll spot-check the Supabase admin client and auth middleware.
-- **You will lose the Cloudflare deployment path** for `rators-academy-hub.lovable.app`. Lovable's own publish flow won't work after this change because the Worker entry is gone. You'd be Vercel-only.
-- **Server function cold starts will be slower** on Vercel (Node lambdas) than on Workers.
+## Step 3 — Quick fallback if you can't find logs
 
-## Technical changes summary
+If Vercel logs are empty/locked, I can temporarily make the middleware re-throw the error so Vercel's default error page shows the message inline. That's a 2-line edit, ship a new deploy, screenshot the page, then revert. Tell me to do this if logs aren't accessible.
 
-- `vite.config.ts` — rewrite, swap Cloudflare plugin for Vercel target
-- `src/server.ts` — simplify (remove Worker `fetch` export, keep error wrapper as request handler) or delete
-- `wrangler.jsonc` — delete
-- `vercel.json` — create
-- `package.json` — add Vite/TanStack/Tailwind/React plugin deps
-- No changes to routes, server functions, Supabase code, or RLS
+## Technical context
 
-## What you do after I push
+- `src/start.ts` `errorMiddleware` catches all SSR throws and returns `renderErrorPage()`. The real stack is only in `console.error`, which goes to Vercel function logs — not Cloudflare logs (which I can read) and not the browser.
+- `vite.config.vercel.ts` uses `tanstackStart({ target: "vercel" })` with no `server.entry` override, so `src/server.ts` (the Cloudflare wrapper) is **not** used on Vercel — only `src/start.ts` is.
+- The Lovable preview hits 200s, confirming the bug is Vercel-specific.
 
-1. In Vercel: connect the GitHub repo (if not already) → set the 6 env vars above → redeploy
-2. Verify `/login` loads, sign in as admin → confirm dashboard renders
-3. If anything 500s, share the Vercel function logs and I'll patch
+## What I need from you to proceed
 
-**Confirm and I'll execute.** Also flag if you want to keep the Lovable/Cloudflare deployment alongside Vercel — that requires a dual-config setup which is more involved.
+The error line + stack from Vercel runtime logs (Step 1), or your go-ahead to do Step 3 (temporary re-throw to surface it).
