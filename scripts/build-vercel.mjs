@@ -37,7 +37,7 @@ await cp(CLIENT, STATIC, { recursive: true });
 // Wrapper that converts Node http req/res into a Web Request/Response and
 // delegates to the TanStack Start fetch handler.
 const wrapperSrc = `
-import server from "./server-entry.js";
+import server from "tanstack-server-entry";
 
 export default async function handler(req, res) {
   try {
@@ -110,7 +110,7 @@ await build({
   format: "esm",
   outfile: path.join(FN_DIR, "index.mjs"),
   alias: {
-    "./server-entry.js": SERVER_ENTRY,
+    "tanstack-server-entry": SERVER_ENTRY,
   },
   banner: {
     // Polyfill CommonJS-style require for any rare deps that need it inside ESM.
