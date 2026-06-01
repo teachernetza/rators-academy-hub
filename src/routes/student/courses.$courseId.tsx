@@ -12,11 +12,17 @@ import {
   getStudentCourse, getStudentLesson, markLessonComplete,
   requestUploadUrl, submitActivity, submitQuiz,
 } from "@/lib/student-course.functions";
+import { getCourseFileUrl } from "@/lib/courses.functions";
+import { listComments, postComment, deleteComment } from "@/lib/comments.functions";
+import { getNote, saveNote } from "@/lib/notes.functions";
 import {
   CheckCircle2, Lock, Video, ClipboardList, HelpCircle, ChevronLeft, Loader2, Upload,
+  BookOpen, FileText, MessageSquare, NotebookPen, Send, Trash2, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/student/courses/$courseId")({
   component: () => <RoleGuard role="student"><Page /></RoleGuard>,
