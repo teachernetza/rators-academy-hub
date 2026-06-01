@@ -242,3 +242,42 @@ export const deleteLesson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ── Course files (teacher uploads for reading/file lessons) ────────────────
+export const requestCourseFileUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    courseId: z.string().uuid(),
+    lessonId: z.string().uuid().optional(),
+    filename: z.string().min(1).max(200),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanEditCourse(context.userId, data.courseId);
+    const safe = data.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const lesson = data.lessonId ?? "general";
+    const path = `${data.courseId}/${lesson}/${Date.now()}-${safe}`;
+    const { data: signed, error } = await supabaseAdmin.storage.from("course-files")
+      .createSignedUploadUrl(path);
+    if (error) throw new Error(error.message);
+    return { path, token: signed.token };
+  });
+
+export const getCourseFileUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ path: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Validate access: path is courseId/...
+    const courseId = data.path.split("/")[0];
+    const [{ data: enr }, { data: course }, { data: prof }] = await Promise.all([
+      supabaseAdmin.from("enrollments").select("id").eq("student_id", context.userId).eq("course_id", courseId).maybeSingle(),
+      supabaseAdmin.from("courses").select("teacher_id").eq("id", courseId).single(),
+      supabaseAdmin.from("profiles").select("role").eq("id", context.userId).single(),
+    ]);
+    if (!enr && course?.teacher_id !== context.userId && prof?.role !== "admin") {
+      throw new Error("Not allowed");
+    }
+    const { data: signed, error } = await supabaseAdmin.storage.from("course-files")
+      .createSignedUrl(data.path, 3600);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl };
+  });
