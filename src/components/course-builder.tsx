@@ -15,8 +15,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Video, ClipboardList, HelpCircle, Pencil, Loader2 } from "lucide-react";
+import { Plus, Trash2, Video, ClipboardList, HelpCircle, Pencil, Loader2, FileText, BookOpen, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { requestCourseFileUploadUrl } from "@/lib/courses.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export function CourseBuilder({ courseId }: { courseId: string }) {
   const qc = useQueryClient();
@@ -118,7 +120,7 @@ function SectionCard({ section, index, courseId }: { section: any; index: number
   );
 }
 
-const TYPE_ICON = { video: Video, activity: ClipboardList, quiz: HelpCircle } as const;
+const TYPE_ICON = { video: Video, activity: ClipboardList, quiz: HelpCircle, reading: BookOpen, file: FileText } as const;
 
 function LessonRow({ lesson, index, courseId }: { lesson: any; index: number; courseId: string }) {
   const qc = useQueryClient();
