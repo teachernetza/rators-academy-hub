@@ -263,6 +263,24 @@ function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { course
         </div>
       )}
 
+      {type === "reading" && (
+        <div className="space-y-2">
+          <Label>Reading content (markdown supported)</Label>
+          <Textarea rows={10} value={body} onChange={(e) => setBody(e.target.value)} placeholder="# Section title&#10;&#10;Write your lesson here..." required />
+        </div>
+      )}
+
+      {type === "file" && (
+        <div className="space-y-2">
+          <Label>Downloadable file (PDF, slides, etc.)</Label>
+          <Input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} disabled={uploading} />
+          {uploading && <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Uploading…</p>}
+          {filePath && !uploading && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1"><Upload className="h-3 w-3" />Uploaded: {fileName}</p>
+          )}
+        </div>
+      )}
+
       {type === "quiz" && (
         <div className="space-y-4">
           {questions.map((q, qi) => (
