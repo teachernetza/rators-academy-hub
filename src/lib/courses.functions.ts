@@ -179,6 +179,11 @@ const lessonContent = z.object({
   video_url: z.string().url().optional(),
   // activity
   instructions: z.string().max(5000).optional(),
+  // reading
+  body: z.string().max(50000).optional(),
+  // file
+  file_path: z.string().max(500).optional(),
+  file_name: z.string().max(200).optional(),
   // quiz
   questions: z.array(z.object({
     text: z.string().min(1).max(500),
@@ -193,7 +198,7 @@ export const createLesson = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     section_id: z.string().uuid(),
     title: z.string().min(1).max(200),
-    type: z.enum(["video", "activity", "quiz"]),
+    type: z.enum(["video", "activity", "quiz", "reading", "file"]),
     content: lessonContent,
   }).parse(d))
   .handler(async ({ data, context }) => {
