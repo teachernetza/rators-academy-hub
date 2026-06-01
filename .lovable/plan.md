@@ -1,47 +1,70 @@
-## What's happening
+## Status check
 
-The screen you see is **our own branded error page** (defined in `src/lib/error-page.ts`). It's returned by the request middleware in `src/start.ts`:
+The student lesson viewer already exists with sequential unlock, video, activity upload + grading, and quizzes. Below are **new capabilities** to add — not a rebuild.
 
-```text
-SSR request → errorMiddleware.next() throws → middleware logs error + returns renderErrorPage()
-```
+## What we'll add (5 capabilities)
 
-So:
-- Vercel **is** running our app (build succeeded, function deployed).
-- Env vars **are** reaching the function (otherwise the supabase admin client would throw a different message we'd see in build, not at request time).
-- Some code path is throwing during server-side rendering of `/` or `/login`.
+### 1. Per-lesson discussions (Q&A thread)
+Students can ask questions on any lesson; teachers and classmates can reply.
+- New table `lesson_comments` (lesson_id, user_id, parent_id, body, created_at).
+- Right-side panel inside the lesson viewer with a thread.
+- Teacher replies get a "Teacher" badge; new replies trigger a `pending_tasks` row for the teacher.
 
-The original stack is `console.error`-ed inside that middleware — it lands in **Vercel's runtime logs**, which I can't read from here.
+### 2. Personal notes per lesson
+Students can keep private notes while watching a video.
+- New table `lesson_notes` (lesson_id, student_id, body, updated_at). One row per student/lesson.
+- Collapsible notes panel beside the video; autosaves on blur.
 
-## Step 1 — Get the real error (you, ~1 min)
+### 3. Course certificates
+When a student hits 100% progress, generate a printable certificate page.
+- New table `certificates` (student_id, course_id, issued_at, serial). Auto-created when `recomputeProgress` returns 100%.
+- New route `/student/certificates` listing all certificates.
+- New route `/student/certificates/$id` rendering a printable certificate (CSS print styles).
+- Surfaced on the student dashboard ("You earned a certificate!").
 
-In Vercel:
-1. Open your project → **Logs** tab (or **Deployments → latest → Functions → Runtime Logs**).
-2. Refresh the broken URL once.
-3. Copy the most recent red/error line plus the stack trace underneath and paste it in chat.
+### 4. Richer lesson types in the course builder
+Extend the existing `lessons.type` discriminator with two more:
+- **`reading`** — rich-text/markdown lesson body (Tiptap or simple textarea + react-markdown). Marked complete via "Mark as read".
+- **`file`** — teacher uploads a PDF/slide deck; students download it. Reuses the `submissions` bucket pattern but in a new `course-files` bucket (public-read inside enrolled courses).
 
-If nothing shows under Runtime Logs, try **Functions → `index` (or `_server`) → Logs**.
+Wires into `CourseBuilder`, `LessonForm`, and the student `LessonView`.
 
-## Step 2 — Most likely causes (ranked, I'll fix whichever matches)
+### 5. Course catalog + self-enrollment for published courses
+Today, students must be invited. Add a `/student/catalog` page listing all `status='published'` courses, with an "Enroll" button that creates the enrollment row directly (RLS policy update required).
 
-| # | Cause | Symptom in logs | Fix |
-|---|---|---|---|
-| 1 | `attachSupabaseAuth` middleware calling `supabase.auth.getSession()` on the server where `localStorage` storage is undefined and something throws | `TypeError` mentioning `storage` or `getSession` | Make the attacher no-op on the server (it already should — verify) |
-| 2 | A route loader / component touches `window`, `document`, or `localStorage` during SSR | `ReferenceError: window is not defined` | Wrap the offending access in `useEffect` or `<ClientOnly>` |
-| 3 | Supabase client proxy throws because `VITE_SUPABASE_URL` wasn't inlined at Vercel build time | `Missing Supabase environment variable(s)` | Re-check env-var **scope** (must be ticked for Production at build time, not just runtime — Vercel inlines `VITE_*` at build) and **Redeploy** without cache |
-| 4 | Vercel target output mismatch — `vercel.json` points at `.vercel/output` but the build emitted to `dist/` | 404 with no error log | Update `vercel.json` outputDirectory, or remove it and let TanStack's vercel preset handle it |
-| 5 | `@tanstack/react-start` vercel preset version mismatch | Module-init crash on first request | Pin to a known-good version |
+## Technical notes
 
-## Step 3 — Quick fallback if you can't find logs
+**Migrations (one batch):**
+- `lesson_comments` table + RLS (enrolled students read/write on their courses; teachers can read/write on their courses; admin all).
+- `lesson_notes` table + RLS (owner only).
+- `certificates` table + RLS (owner read; admin all). Serial = `gen_random_uuid()` short-prefix.
+- Extend `lessons.type` check (currently free text) — no schema change needed since `type` is `text`.
+- New `course-files` storage bucket (private) + RLS policy keyed to enrollment.
+- New `enrollments` INSERT policy allowing a student to self-enroll into a `published` course.
 
-If Vercel logs are empty/locked, I can temporarily make the middleware re-throw the error so Vercel's default error page shows the message inline. That's a 2-line edit, ship a new deploy, screenshot the page, then revert. Tell me to do this if logs aren't accessible.
+**New server functions in `src/lib/`:**
+- `comments.functions.ts` — `listComments`, `postComment`.
+- `notes.functions.ts` — `getNote`, `saveNote`.
+- `certificates.functions.ts` — `listMyCertificates`, `getCertificate`; emit certificate inside `recomputeProgress` when pct=100.
+- `catalog.functions.ts` — `listCatalog`, `enrollSelf`.
 
-## Technical context
+**New routes:**
+- `/student/catalog`
+- `/student/certificates`
+- `/student/certificates/$id`
 
-- `src/start.ts` `errorMiddleware` catches all SSR throws and returns `renderErrorPage()`. The real stack is only in `console.error`, which goes to Vercel function logs — not Cloudflare logs (which I can read) and not the browser.
-- `vite.config.vercel.ts` uses `tanstackStart({ target: "vercel" })` with no `server.entry` override, so `src/server.ts` (the Cloudflare wrapper) is **not** used on Vercel — only `src/start.ts` is.
-- The Lovable preview hits 200s, confirming the bug is Vercel-specific.
+**Updated files:**
+- `student/courses.$courseId.tsx` — add Comments panel + Notes panel + new lesson-type renderers.
+- `course-builder.tsx` (`LessonForm`) — add "Reading" and "File" type options.
+- `student/dashboard.tsx` — surface earned certificates + catalog CTA.
+- `dashboard-layout.tsx` — sidebar links for Catalog & Certificates.
 
-## What I need from you to proceed
+## Out of scope (call out if you'd rather do these instead)
+- Live announcements/notifications system
+- Calendar/deadlines view
+- Messaging (DMs between teacher/student)
+- AI tutor on lessons using Lovable AI
+- Mobile-specific polish
 
-The error line + stack from Vercel runtime logs (Step 1), or your go-ahead to do Step 3 (temporary re-throw to surface it).
+## Approve to proceed
+If you approve, I'll start with the migration (single batch covering all 5 features) so you can review the SQL before any code changes land.

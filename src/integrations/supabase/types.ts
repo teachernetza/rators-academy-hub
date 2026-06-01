@@ -72,6 +72,30 @@ export type Database = {
           },
         ]
       }
+      certificates: {
+        Row: {
+          course_id: string
+          id: string
+          issued_at: string
+          serial: string
+          student_id: string
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          issued_at?: string
+          serial: string
+          student_id: string
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          issued_at?: string
+          serial?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           cover_image_url: string | null
@@ -207,6 +231,41 @@ export type Database = {
           },
         ]
       }
+      lesson_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          lesson_id: string
+          parent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          parent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          parent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_completions: {
         Row: {
           completed_at: string
@@ -242,6 +301,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lesson_notes: {
+        Row: {
+          body: string
+          id: string
+          lesson_id: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          id?: string
+          lesson_id: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          id?: string
+          lesson_id?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       lessons: {
         Row: {
