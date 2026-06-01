@@ -162,7 +162,7 @@ function NewLessonDialog({ sectionId, courseId }: { sectionId: string; courseId:
       <DialogTrigger asChild><Button variant="outline" size="sm" className="mt-3"><Plus className="mr-2 h-4 w-4" />Add lesson</Button></DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader><DialogTitle>New lesson</DialogTitle></DialogHeader>
-        <LessonForm onSubmit={(d) => m.mutate(d)} pending={m.isPending} />
+        <LessonForm courseId={courseId} onSubmit={(d) => m.mutate(d)} pending={m.isPending} />
       </DialogContent>
     </Dialog>
   );
@@ -182,26 +182,48 @@ function EditLessonDialog({ lesson, courseId }: { lesson: any; courseId: string 
       <DialogTrigger asChild><Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button></DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Edit lesson</DialogTitle></DialogHeader>
-        <LessonForm initial={lesson} lockType onSubmit={(d) => m.mutate(d)} pending={m.isPending} />
+        <LessonForm courseId={courseId} initial={lesson} lockType onSubmit={(d) => m.mutate(d)} pending={m.isPending} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function LessonForm({ initial, lockType, onSubmit, pending }: { initial?: any; lockType?: boolean; onSubmit: (d: any) => void; pending: boolean }) {
+function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { courseId: string; initial?: any; lockType?: boolean; onSubmit: (d: any) => void; pending: boolean }) {
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [type, setType] = useState<"video" | "activity" | "quiz">(initial?.type ?? "video");
+  const [type, setType] = useState<"video" | "activity" | "quiz" | "reading" | "file">(initial?.type ?? "video");
   const [videoUrl, setVideoUrl] = useState(initial?.content?.video_url ?? "");
   const [instructions, setInstructions] = useState(initial?.content?.instructions ?? "");
+  const [body, setBody] = useState(initial?.content?.body ?? "");
+  const [filePath, setFilePath] = useState<string>(initial?.content?.file_path ?? "");
+  const [fileName, setFileName] = useState<string>(initial?.content?.file_name ?? "");
+  const [uploading, setUploading] = useState(false);
   const [questions, setQuestions] = useState<Array<{ text: string; options: string[]; correct: number; points: number }>>(
     initial?.content?.questions ?? [{ text: "", options: ["", "", "", ""], correct: 0, points: 1 }],
   );
+
+  const reqUpload = useServerFn(requestCourseFileUploadUrl);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const { path, token } = await reqUpload({ data: { courseId, filename: file.name } });
+      const { error } = await supabase.storage.from("course-files").uploadToSignedUrl(path, token, file);
+      if (error) throw error;
+      setFilePath(path);
+      setFileName(file.name);
+      toast.success("File uploaded");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally { setUploading(false); }
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     let content: any = {};
     if (type === "video") content = { video_url: videoUrl };
     else if (type === "activity") content = { instructions };
+    else if (type === "reading") content = { body };
+    else if (type === "file") content = { file_path: filePath, file_name: fileName };
     else content = { questions };
     onSubmit({ title, type, content });
   };
@@ -218,6 +240,8 @@ function LessonForm({ initial, lockType, onSubmit, pending }: { initial?: any; l
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="video">Video</SelectItem>
+            <SelectItem value="reading">Reading</SelectItem>
+            <SelectItem value="file">File / Download</SelectItem>
             <SelectItem value="activity">Interactive Activity</SelectItem>
             <SelectItem value="quiz">Quiz</SelectItem>
           </SelectContent>
