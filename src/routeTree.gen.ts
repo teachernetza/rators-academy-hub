@@ -22,6 +22,8 @@ import { Route as StudentProfileRouteImport } from './routes/student/profile'
 import { Route as StudentPendingRouteImport } from './routes/student/pending'
 import { Route as StudentDashboardRouteImport } from './routes/student/dashboard'
 import { Route as StudentCoursesRouteImport } from './routes/student/courses'
+import { Route as StudentCertificatesRouteImport } from './routes/student/certificates'
+import { Route as StudentCatalogRouteImport } from './routes/student/catalog'
 import { Route as AdminTeachersRouteImport } from './routes/admin/teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -29,6 +31,7 @@ import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as TeacherCoursesCourseIdRouteImport } from './routes/teacher/courses.$courseId'
 import { Route as StudentCoursesCourseIdRouteImport } from './routes/student/courses.$courseId'
+import { Route as StudentCertificatesIdRouteImport } from './routes/student/certificates.$id'
 import { Route as ApiPublicSeedRouteImport } from './routes/api/public/seed'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses.$courseId'
 
@@ -97,6 +100,16 @@ const StudentCoursesRoute = StudentCoursesRouteImport.update({
   path: '/student/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentCertificatesRoute = StudentCertificatesRouteImport.update({
+  id: '/student/certificates',
+  path: '/student/certificates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentCatalogRoute = StudentCatalogRouteImport.update({
+  id: '/student/catalog',
+  path: '/student/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
   id: '/admin/teachers',
   path: '/admin/teachers',
@@ -132,6 +145,11 @@ const StudentCoursesCourseIdRoute = StudentCoursesCourseIdRouteImport.update({
   path: '/$courseId',
   getParentRoute: () => StudentCoursesRoute,
 } as any)
+const StudentCertificatesIdRoute = StudentCertificatesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => StudentCertificatesRoute,
+} as any)
 const ApiPublicSeedRoute = ApiPublicSeedRouteImport.update({
   id: '/api/public/seed',
   path: '/api/public/seed',
@@ -151,6 +169,8 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/catalog': typeof StudentCatalogRoute
+  '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
@@ -164,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
@@ -175,6 +196,8 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/catalog': typeof StudentCatalogRoute
+  '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
@@ -188,6 +211,7 @@ export interface FileRoutesByTo {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
@@ -200,6 +224,8 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/catalog': typeof StudentCatalogRoute
+  '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/pending': typeof StudentPendingRoute
@@ -213,6 +239,7 @@ export interface FileRoutesById {
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
@@ -226,6 +253,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/catalog'
+    | '/student/certificates'
     | '/student/courses'
     | '/student/dashboard'
     | '/student/pending'
@@ -239,6 +268,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   fileRoutesByTo: FileRoutesByTo
@@ -250,6 +280,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/catalog'
+    | '/student/certificates'
     | '/student/courses'
     | '/student/dashboard'
     | '/student/pending'
@@ -263,6 +295,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   id:
@@ -274,6 +307,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/catalog'
+    | '/student/certificates'
     | '/student/courses'
     | '/student/dashboard'
     | '/student/pending'
@@ -287,6 +322,7 @@ export interface FileRouteTypes {
     | '/teacher/students'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/courses/$courseId'
   fileRoutesById: FileRoutesById
@@ -299,6 +335,8 @@ export interface RootRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  StudentCatalogRoute: typeof StudentCatalogRoute
+  StudentCertificatesRoute: typeof StudentCertificatesRouteWithChildren
   StudentCoursesRoute: typeof StudentCoursesRouteWithChildren
   StudentDashboardRoute: typeof StudentDashboardRoute
   StudentPendingRoute: typeof StudentPendingRoute
@@ -406,6 +444,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/certificates': {
+      id: '/student/certificates'
+      path: '/student/certificates'
+      fullPath: '/student/certificates'
+      preLoaderRoute: typeof StudentCertificatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/catalog': {
+      id: '/student/catalog'
+      path: '/student/catalog'
+      fullPath: '/student/catalog'
+      preLoaderRoute: typeof StudentCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/teachers': {
       id: '/admin/teachers'
       path: '/admin/teachers'
@@ -455,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentCoursesCourseIdRouteImport
       parentRoute: typeof StudentCoursesRoute
     }
+    '/student/certificates/$id': {
+      id: '/student/certificates/$id'
+      path: '/$id'
+      fullPath: '/student/certificates/$id'
+      preLoaderRoute: typeof StudentCertificatesIdRouteImport
+      parentRoute: typeof StudentCertificatesRoute
+    }
     '/api/public/seed': {
       id: '/api/public/seed'
       path: '/api/public/seed'
@@ -483,6 +542,17 @@ const AdminCoursesRouteChildren: AdminCoursesRouteChildren = {
 const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
   AdminCoursesRouteChildren,
 )
+
+interface StudentCertificatesRouteChildren {
+  StudentCertificatesIdRoute: typeof StudentCertificatesIdRoute
+}
+
+const StudentCertificatesRouteChildren: StudentCertificatesRouteChildren = {
+  StudentCertificatesIdRoute: StudentCertificatesIdRoute,
+}
+
+const StudentCertificatesRouteWithChildren =
+  StudentCertificatesRoute._addFileChildren(StudentCertificatesRouteChildren)
 
 interface StudentCoursesRouteChildren {
   StudentCoursesCourseIdRoute: typeof StudentCoursesCourseIdRoute
@@ -516,6 +586,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  StudentCatalogRoute: StudentCatalogRoute,
+  StudentCertificatesRoute: StudentCertificatesRouteWithChildren,
   StudentCoursesRoute: StudentCoursesRouteWithChildren,
   StudentDashboardRoute: StudentDashboardRoute,
   StudentPendingRoute: StudentPendingRoute,
@@ -532,13 +604,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

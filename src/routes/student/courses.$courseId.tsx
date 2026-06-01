@@ -12,11 +12,17 @@ import {
   getStudentCourse, getStudentLesson, markLessonComplete,
   requestUploadUrl, submitActivity, submitQuiz,
 } from "@/lib/student-course.functions";
+import { getCourseFileUrl } from "@/lib/courses.functions";
+import { listComments, postComment, deleteComment } from "@/lib/comments.functions";
+import { getNote, saveNote } from "@/lib/notes.functions";
 import {
   CheckCircle2, Lock, Video, ClipboardList, HelpCircle, ChevronLeft, Loader2, Upload,
+  BookOpen, FileText, MessageSquare, NotebookPen, Send, Trash2, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/student/courses/$courseId")({
   component: () => <RoleGuard role="student"><Page /></RoleGuard>,
@@ -50,7 +56,7 @@ function Page() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Section {si + 1} · {s.title}</p>
                 <div className="space-y-1">
                   {s.lessons.map((l: any) => {
-                    const Icon = l.type === "video" ? Video : l.type === "activity" ? ClipboardList : HelpCircle;
+                    const Icon = l.type === "video" ? Video : l.type === "activity" ? ClipboardList : l.type === "reading" ? BookOpen : l.type === "file" ? FileText : HelpCircle;
                     const disabled = !l.unlocked && !l.completed;
                     return (
                       <button
@@ -103,31 +109,177 @@ function LessonView({ lesson, courseId }: { lesson: any; courseId: string }) {
   if (!data) return null;
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-2xl font-bold">{lesson.title}</h2>
-        <Badge variant="secondary" className="capitalize">{lesson.type}</Badge>
+    <div className="space-y-4">
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-2xl font-bold">{lesson.title}</h2>
+          <Badge variant="secondary" className="capitalize">{lesson.type}</Badge>
+        </div>
+
+        {lesson.type === "video" && (
+          <>
+            <div className="aspect-video rounded-lg overflow-hidden bg-black">
+              {(data.lesson.content as any)?.video_url ? (
+                <iframe src={(data.lesson.content as any).video_url} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              ) : <div className="flex items-center justify-center h-full text-white/60">No video URL.</div>}
+            </div>
+            {!data.completed && (
+              <Button onClick={() => markM.mutate()} disabled={markM.isPending}>
+                {markM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<CheckCircle2 className="mr-2 h-4 w-4" />Mark as complete
+              </Button>
+            )}
+            {data.completed && <p className="text-sm text-green-600 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Completed</p>}
+          </>
+        )}
+
+        {lesson.type === "reading" && <ReadingView data={data} completed={data.completed} onComplete={() => markM.mutate()} pending={markM.isPending} />}
+        {lesson.type === "file" && <FileLessonView data={data} completed={data.completed} onComplete={() => markM.mutate()} pending={markM.isPending} />}
+        {lesson.type === "activity" && <ActivityView lesson={lesson} data={data} courseId={courseId} />}
+        {lesson.type === "quiz" && <QuizView lesson={lesson} data={data} courseId={courseId} />}
+      </Card>
+
+      <LessonExtras lessonId={lesson.id} />
+    </div>
+  );
+}
+
+function ReadingView({ data, completed, onComplete, pending }: { data: any; completed: boolean; onComplete: () => void; pending: boolean }) {
+  const body = data.lesson.content?.body ?? "";
+  return (
+    <div className="space-y-4">
+      <div className="prose prose-sm max-w-none whitespace-pre-wrap rounded-lg bg-muted/30 p-5 text-foreground">{body || "No content."}</div>
+      {!completed ? (
+        <Button onClick={onComplete} disabled={pending}>
+          {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<CheckCircle2 className="mr-2 h-4 w-4" />Mark as read
+        </Button>
+      ) : <p className="text-sm text-green-600 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Completed</p>}
+    </div>
+  );
+}
+
+function FileLessonView({ data, completed, onComplete, pending }: { data: any; completed: boolean; onComplete: () => void; pending: boolean }) {
+  const content = data.lesson.content ?? {};
+  const getUrl = useServerFn(getCourseFileUrl);
+  const [busy, setBusy] = useState(false);
+
+  const handleDownload = async () => {
+    if (!content.file_path) return;
+    setBusy(true);
+    try {
+      const { url } = await getUrl({ data: { path: content.file_path } });
+      window.open(url, "_blank");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border p-5 flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <FileText className="h-6 w-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{content.file_name ?? "Download file"}</p>
+          <p className="text-xs text-muted-foreground">Click to download the course material</p>
+        </div>
+        <Button onClick={handleDownload} disabled={!content.file_path || busy}>
+          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Download
+        </Button>
       </div>
+      {!completed ? (
+        <Button variant="outline" onClick={onComplete} disabled={pending}>
+          {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<CheckCircle2 className="mr-2 h-4 w-4" />Mark as complete
+        </Button>
+      ) : <p className="text-sm text-green-600 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Completed</p>}
+    </div>
+  );
+}
 
-      {lesson.type === "video" && (
-        <>
-          <div className="aspect-video rounded-lg overflow-hidden bg-black">
-            {(data.lesson.content as any)?.video_url ? (
-              <iframe src={(data.lesson.content as any).video_url} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-            ) : <div className="flex items-center justify-center h-full text-white/60">No video URL.</div>}
-          </div>
-          {!data.completed && (
-            <Button onClick={() => markM.mutate()} disabled={markM.isPending}>
-              {markM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}<CheckCircle2 className="mr-2 h-4 w-4" />Mark as complete
-            </Button>
-          )}
-          {data.completed && <p className="text-sm text-green-600 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Completed</p>}
-        </>
-      )}
-
-      {lesson.type === "activity" && <ActivityView lesson={lesson} data={data} courseId={courseId} />}
-      {lesson.type === "quiz" && <QuizView lesson={lesson} data={data} courseId={courseId} />}
+function LessonExtras({ lessonId }: { lessonId: string }) {
+  return (
+    <Card className="p-4">
+      <Tabs defaultValue="discussion">
+        <TabsList>
+          <TabsTrigger value="discussion"><MessageSquare className="mr-1 h-4 w-4" />Discussion</TabsTrigger>
+          <TabsTrigger value="notes"><NotebookPen className="mr-1 h-4 w-4" />My notes</TabsTrigger>
+        </TabsList>
+        <TabsContent value="discussion" className="mt-4"><CommentsPanel lessonId={lessonId} /></TabsContent>
+        <TabsContent value="notes" className="mt-4"><NotesPanel lessonId={lessonId} /></TabsContent>
+      </Tabs>
     </Card>
+  );
+}
+
+function CommentsPanel({ lessonId }: { lessonId: string }) {
+  const qc = useQueryClient();
+  const list = useServerFn(listComments);
+  const post = useServerFn(postComment);
+  const del = useServerFn(deleteComment);
+  const q = useQuery({ queryKey: ["comments", lessonId], queryFn: () => list({ data: { lessonId } }) });
+  const [body, setBody] = useState("");
+  const postM = useMutation({
+    mutationFn: () => post({ data: { lessonId, body } }),
+    onSuccess: () => { setBody(""); qc.invalidateQueries({ queryKey: ["comments", lessonId] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const delM = useMutation({
+    mutationFn: (id: string) => del({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["comments", lessonId] }),
+  });
+  const items = q.data ?? [];
+
+  return (
+    <div className="space-y-3">
+      <form onSubmit={(e) => { e.preventDefault(); if (body.trim()) postM.mutate(); }} className="flex gap-2">
+        <Textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Ask a question or share a thought…" />
+        <Button type="submit" disabled={!body.trim() || postM.isPending} size="icon">
+          {postM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+      </form>
+      <div className="space-y-2">
+        {items.map((c: any) => (
+          <div key={c.id} className="rounded-lg border border-border p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-sm">{c.author_name}</span>
+              {c.author_role === "teacher" && <Badge variant="default" className="text-[10px]">Teacher</Badge>}
+              {c.author_role === "admin" && <Badge variant="secondary" className="text-[10px]">Admin</Badge>}
+              <span className="text-xs text-muted-foreground ml-auto">{new Date(c.created_at).toLocaleString()}</span>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => delM.mutate(c.id)} title="Delete">
+                <Trash2 className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{c.body}</p>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No comments yet. Be the first!</p>}
+      </div>
+    </div>
+  );
+}
+
+function NotesPanel({ lessonId }: { lessonId: string }) {
+  const getFn = useServerFn(getNote);
+  const saveFn = useServerFn(saveNote);
+  const q = useQuery({ queryKey: ["note", lessonId], queryFn: () => getFn({ data: { lessonId } }) });
+  const [body, setBody] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  if (q.data && !loaded) { setBody(q.data.body ?? ""); setLoaded(true); }
+
+  const handleBlur = async () => {
+    setSaving(true);
+    try { await saveFn({ data: { lessonId, body } }); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} onBlur={handleBlur}
+        placeholder="Your private notes for this lesson…" />
+      <p className="text-xs text-muted-foreground">{saving ? "Saving…" : "Autosaves when you click out."}</p>
+    </div>
   );
 }
 

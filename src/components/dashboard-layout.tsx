@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Settings, LogOut,
-  ClipboardList, UserCircle, Menu, BarChart3,
+  ClipboardList, UserCircle, Menu, BarChart3, Compass, Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -33,7 +33,9 @@ const NAV: Record<AppRole, NavItem[]> = {
   student: [
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/student/courses", label: "My Courses", icon: BookOpen },
+    { to: "/student/catalog", label: "Catalog", icon: Compass },
     { to: "/student/progress", label: "Progress", icon: BarChart3 },
+    { to: "/student/certificates", label: "Certificates", icon: Award },
     { to: "/student/pending", label: "Pending", icon: ClipboardList },
     { to: "/student/profile", label: "Profile", icon: UserCircle },
   ],

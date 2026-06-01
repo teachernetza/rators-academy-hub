@@ -23,6 +23,19 @@ async function recomputeProgress(studentId: string, courseId: string) {
   const pct = Math.round(((count ?? 0) / lessonIds.length) * 100);
   await supabaseAdmin.from("enrollments").update({ progress: pct })
     .eq("student_id", studentId).eq("course_id", courseId);
+
+  // Auto-issue certificate on completion
+  if (pct === 100) {
+    const { data: existing } = await supabaseAdmin
+      .from("certificates").select("id")
+      .eq("student_id", studentId).eq("course_id", courseId).maybeSingle();
+    if (!existing) {
+      const serial = `RA-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      await supabaseAdmin.from("certificates").insert({
+        student_id: studentId, course_id: courseId, serial,
+      });
+    }
+  }
 }
 
 export const listMyCourses = createServerFn({ method: "GET" })
