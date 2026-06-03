@@ -1,22 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, Check, X, BookOpen } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Bell, Check, X, BookOpen, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { listMyInvitations, respondInvitation } from "@/lib/invitations.functions";
+import { listAnnouncements, markAnnouncementRead } from "@/lib/announcements.functions";
 import { toast } from "sonner";
 
 export function NotificationBell() {
   const qc = useQueryClient();
   const fetchInv = useServerFn(listMyInvitations);
   const respond = useServerFn(respondInvitation);
+  const listAnn = useServerFn(listAnnouncements);
+  const markRead = useServerFn(markAnnouncementRead);
 
   const inv = useQuery({
     queryKey: ["my-invitations"],
     queryFn: () => fetchInv({}),
     refetchInterval: 30000,
+  });
+
+  const ann = useQuery({
+    queryKey: ["announcements-unread"],
+    queryFn: () => listAnn({ data: {} }),
+    refetchInterval: 60000,
   });
 
   const respondM = useMutation({
@@ -32,15 +42,19 @@ export function NotificationBell() {
 
   const items = inv.data ?? [];
   const pending = items.filter((i: any) => i.status === "pending");
+  const announcements = (ann.data ?? []) as any[];
+  const unreadAnn = announcements.filter((a) => !a.read).slice(0, 5);
+
+  const totalBadge = pending.length + unreadAnn.length;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {pending.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-              {pending.length}
+          {totalBadge > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              {totalBadge}
             </span>
           )}
         </Button>
@@ -48,13 +62,33 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-96 p-0">
         <div className="border-b border-border px-4 py-3">
           <h3 className="font-heading font-semibold">Notifications</h3>
-          <p className="text-xs text-muted-foreground">{pending.length} pending invitation{pending.length === 1 ? "" : "s"}</p>
+          <p className="text-xs text-muted-foreground">
+            {pending.length} invitation{pending.length === 1 ? "" : "s"} · {unreadAnn.length} announcement{unreadAnn.length === 1 ? "" : "s"}
+          </p>
         </div>
-        <ScrollArea className="max-h-96">
-          {items.length === 0 ? (
+        <ScrollArea className="max-h-[28rem]">
+          {totalBadge === 0 && items.length === 0 && announcements.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
           ) : (
             <ul className="divide-y divide-border">
+              {unreadAnn.map((a) => (
+                <li key={a.id} className="p-4 bg-accent/30">
+                  <Link
+                    to="/announcements"
+                    onClick={() => { markRead({ data: { id: a.id } }).then(() => qc.invalidateQueries({ queryKey: ["announcements-unread"] })); }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Megaphone className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{a.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{a.course_title ?? "Platform-wide"}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{new Date(a.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
               {items.map((i: any) => (
                 <li key={i.id} className="p-4">
                   <div className="flex items-start gap-3">

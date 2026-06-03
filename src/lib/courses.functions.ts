@@ -200,6 +200,7 @@ export const createLesson = createServerFn({ method: "POST" })
     title: z.string().min(1).max(200),
     type: z.enum(["video", "activity", "quiz", "reading", "file"]),
     content: lessonContent,
+    due_date: z.string().datetime().nullable().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: s } = await supabaseAdmin.from("sections").select("course_id").eq("id", data.section_id).single();
@@ -208,6 +209,7 @@ export const createLesson = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin.from("lessons").insert({
       section_id: data.section_id, title: data.title, type: data.type,
       content: data.content, order_index: count ?? 0,
+      due_date: data.due_date ?? null,
     }).select().single();
     if (error) throw new Error(error.message);
     return row;
@@ -220,6 +222,7 @@ export const updateLesson = createServerFn({ method: "POST" })
     title: z.string().min(1).max(200).optional(),
     content: lessonContent.optional(),
     order_index: z.number().int().optional(),
+    due_date: z.string().datetime().nullable().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: l } = await supabaseAdmin.from("lessons").select("section_id").eq("id", data.id).single();
