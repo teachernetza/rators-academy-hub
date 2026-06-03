@@ -1,70 +1,103 @@
-## Status check
+## Scope (this iteration)
 
-The student lesson viewer already exists with sequential unlock, video, activity upload + grading, and quizzes. Below are **new capabilities** to add — not a rebuild.
+1. Make the app installable with offline support (PWA).
+2. Add **Announcements + Calendar/Deadlines**.
 
-## What we'll add (5 capabilities)
+Teacher analytics + Messaging are deferred to a follow-up.
 
-### 1. Per-lesson discussions (Q&A thread)
-Students can ask questions on any lesson; teachers and classmates can reply.
-- New table `lesson_comments` (lesson_id, user_id, parent_id, body, created_at).
-- Right-side panel inside the lesson viewer with a thread.
-- Teacher replies get a "Teacher" badge; new replies trigger a `pending_tasks` row for the teacher.
+---
 
-### 2. Personal notes per lesson
-Students can keep private notes while watching a video.
-- New table `lesson_notes` (lesson_id, student_id, body, updated_at). One row per student/lesson.
-- Collapsible notes panel beside the video; autosaves on blur.
+## 1) Installable + offline support (PWA)
 
-### 3. Course certificates
-When a student hits 100% progress, generate a printable certificate page.
-- New table `certificates` (student_id, course_id, issued_at, serial). Auto-created when `recomputeProgress` returns 100%.
-- New route `/student/certificates` listing all certificates.
-- New route `/student/certificates/$id` rendering a printable certificate (CSS print styles).
-- Surfaced on the student dashboard ("You earned a certificate!").
+Per Lovable's PWA skill: use `vite-plugin-pwa` with `generateSW`, guarded registration, and a kill-switch path. No offline mode in the editor preview — only in the published app.
 
-### 4. Richer lesson types in the course builder
-Extend the existing `lessons.type` discriminator with two more:
-- **`reading`** — rich-text/markdown lesson body (Tiptap or simple textarea + react-markdown). Marked complete via "Mark as read".
-- **`file`** — teacher uploads a PDF/slide deck; students download it. Reuses the `submissions` bucket pattern but in a new `course-files` bucket (public-read inside enrolled courses).
+- Add `vite-plugin-pwa` to `vite.config.ts`:
+  - `registerType: "autoUpdate"`, `injectRegister: null`, `devOptions.enabled: false`
+  - Workbox: `NetworkFirst` for HTML navigations, `CacheFirst` only for hashed same-origin assets, exclude `/~oauth` and `/api/*` from caching
+- Manifest: name "Rators Academy", short name "Rators", `display: standalone`, theme/background from design tokens, icons 192/512 (generated)
+- Head tags in `__root.tsx`: `manifest`, `theme-color`, `apple-touch-icon`
+- New `src/lib/pwa-register.ts`: single registration wrapper with all guards (dev, iframe, `id-preview--*`, `preview--*`, `lovableproject.com`, `lovableproject-dev.com`, `beta.lovable.dev`, `?sw=off`). Unregisters stale `/sw.js` in refused contexts.
+- Call wrapper once from a client-only effect in `__root.tsx`
+- Generate app icons (PNG 512 + 192) into `public/`
 
-Wires into `CourseBuilder`, `LessonForm`, and the student `LessonView`.
+Offline behavior: cached app shell + last-visited route HTML. Auth-gated data still requires network. Acceptable for a learning app.
 
-### 5. Course catalog + self-enrollment for published courses
-Today, students must be invited. Add a `/student/catalog` page listing all `status='published'` courses, with an "Enroll" button that creates the enrollment row directly (RLS policy update required).
+---
+
+## 2) Announcements
+
+**New table `announcements`** — `course_id` (nullable: NULL = platform-wide), `author_id`, `title`, `body`, `pinned`, `created_at`.
+
+RLS:
+- Admin: ALL
+- Teacher: ALL on rows where `is_course_teacher(auth.uid(), course_id)`; INSERT platform-wide blocked
+- Student: SELECT on platform-wide rows OR rows where `is_enrolled(auth.uid(), course_id)`
+
+**Server fns** `src/lib/announcements.functions.ts`: `listAnnouncements({ scope })`, `createAnnouncement`, `deleteAnnouncement`.
+
+**UI:**
+- New route `/announcements` (visible to all roles in sidebar). Lists pinned first, then recent.
+- Composer panel on the page for admin (platform) and teacher (per-course selector).
+- Reuse `NotificationBell`: surface latest 5 unread announcements via a `read_at` tracking row (`announcement_reads` table: announcement_id, user_id, read_at).
+- Student dashboard widget "Latest announcements".
+- Course detail (student + teacher) gets an "Announcements" tab/section listing course-scoped items.
+
+---
+
+## 3) Calendar & Deadlines
+
+**Schema changes:**
+- Add `due_date timestamptz NULL` to `lessons` (activity/quiz types use it; others ignore)
+- Existing `pending_tasks.due_date` is already there — wire it up properly
+
+**Server fns** `src/lib/calendar.functions.ts`:
+- `listUpcomingForStudent({ days })` — joins `lessons` (with due_date) ∩ student's enrollments, excluding completed lessons
+- `listUpcomingForTeacher({ days })` — lessons with due_date in teacher's courses
+- `setLessonDueDate({ lessonId, dueDate })` — teacher-only
+
+**UI:**
+- New route `/calendar` for students and teachers (role-aware content)
+- Month grid view + upcoming list view (toggle). Uses existing `react-day-picker`/`Calendar` UI component.
+- Student dashboard: "Upcoming deadlines" widget (next 7 days)
+- Teacher dashboard: "Upcoming deadlines in my courses" widget
+- `course-builder.tsx` LessonForm: add optional due-date picker for activity/quiz lessons
+- Student lesson viewer: show due date badge ("Due in 2 days", red if overdue)
+- Overdue activities trigger a `pending_tasks` row for the student (created on view, idempotent)
+
+---
+
+## Sidebar updates (`dashboard-layout.tsx`)
+
+Add `Announcements` and `Calendar` links for all three roles.
+
+---
 
 ## Technical notes
 
-**Migrations (one batch):**
-- `lesson_comments` table + RLS (enrolled students read/write on their courses; teachers can read/write on their courses; admin all).
-- `lesson_notes` table + RLS (owner only).
-- `certificates` table + RLS (owner read; admin all). Serial = `gen_random_uuid()` short-prefix.
-- Extend `lessons.type` check (currently free text) — no schema change needed since `type` is `text`.
-- New `course-files` storage bucket (private) + RLS policy keyed to enrollment.
-- New `enrollments` INSERT policy allowing a student to self-enroll into a `published` course.
+**Migrations (single batch):**
+- `announcements`, `announcement_reads` tables + GRANTs + RLS
+- `ALTER TABLE lessons ADD COLUMN due_date timestamptz`
 
-**New server functions in `src/lib/`:**
-- `comments.functions.ts` — `listComments`, `postComment`.
-- `notes.functions.ts` — `getNote`, `saveNote`.
-- `certificates.functions.ts` — `listMyCertificates`, `getCertificate`; emit certificate inside `recomputeProgress` when pct=100.
-- `catalog.functions.ts` — `listCatalog`, `enrollSelf`.
+**New files:**
+- `src/lib/pwa-register.ts`
+- `src/lib/announcements.functions.ts`
+- `src/lib/calendar.functions.ts`
+- `src/routes/announcements.tsx`
+- `src/routes/calendar.tsx`
+- `public/icon-192.png`, `public/icon-512.png`, `public/manifest.webmanifest` (or generated by plugin)
 
-**New routes:**
-- `/student/catalog`
-- `/student/certificates`
-- `/student/certificates/$id`
+**Edited files:**
+- `vite.config.ts`, `package.json` (add `vite-plugin-pwa`)
+- `src/routes/__root.tsx` (head tags + PWA register call)
+- `src/components/dashboard-layout.tsx` (sidebar)
+- `src/components/notification-bell.tsx` (announcements)
+- `src/components/course-builder.tsx` (due-date on lessons)
+- `src/routes/student/dashboard.tsx`, `teacher/dashboard.tsx` (widgets)
+- `src/routes/student/courses.$courseId.tsx`, `teacher/courses.$courseId.tsx` (announcements + due dates)
 
-**Updated files:**
-- `student/courses.$courseId.tsx` — add Comments panel + Notes panel + new lesson-type renderers.
-- `course-builder.tsx` (`LessonForm`) — add "Reading" and "File" type options.
-- `student/dashboard.tsx` — surface earned certificates + catalog CTA.
-- `dashboard-layout.tsx` — sidebar links for Catalog & Certificates.
+## Out of scope (next iteration)
+- Teacher analytics dashboard
+- Direct messaging between teacher and student
+- Web push notifications
 
-## Out of scope (call out if you'd rather do these instead)
-- Live announcements/notifications system
-- Calendar/deadlines view
-- Messaging (DMs between teacher/student)
-- AI tutor on lessons using Lovable AI
-- Mobile-specific polish
-
-## Approve to proceed
-If you approve, I'll start with the migration (single batch covering all 5 features) so you can review the SQL before any code changes land.
+Approve to proceed and I'll start with the migration.
