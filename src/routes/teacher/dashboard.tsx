@@ -90,9 +90,11 @@ function TeacherDashboard() {
           <div className="mt-4 space-y-3">
             <Highlight icon={ClipboardList} label={`${pendingCount} tasks to review`} />
             <Highlight icon={MessageSquare} label={`${Math.min(2, pendingCount)} students need feedback`} />
-          </div>
-        </Card>
       </div>
+
+      <UpcomingDeadlines />
+
+
 
       <Card className="p-6">
         <h2 className="font-heading text-lg font-semibold mb-4">Student progress</h2>
