@@ -90,9 +90,13 @@ function TeacherDashboard() {
           <div className="mt-4 space-y-3">
             <Highlight icon={ClipboardList} label={`${pendingCount} tasks to review`} />
             <Highlight icon={MessageSquare} label={`${Math.min(2, pendingCount)} students need feedback`} />
+          </div>
+        </Card>
       </div>
 
       <UpcomingDeadlines />
+
+
 
 
 
@@ -126,3 +130,37 @@ function Highlight({ icon: Icon, label }: { icon: any; label: string }) {
     </div>
   );
 }
+
+function UpcomingDeadlines() {
+  const fn = useServerFn(listUpcomingForTeacher);
+  const q = useQuery({ queryKey: ["calendar", "teacher", "dashboard"], queryFn: () => fn({ data: { days: 14 } }) });
+  const items = (q.data ?? []).slice(0, 5);
+  const now = Date.now();
+  return (
+    <Card className="p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="font-heading text-lg font-semibold flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary" />Upcoming deadlines</h2>
+        <Link to="/calendar" className="text-xs text-primary hover:underline">View calendar</Link>
+      </div>
+      <div className="space-y-2">
+        {items.map((it: any) => {
+          const overdue = new Date(it.due_date).getTime() < now;
+          return (
+            <div key={it.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium truncate">{it.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{it.course_title}</p>
+              </div>
+              <Badge variant={overdue ? "destructive" : "outline"} className="shrink-0 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {new Date(it.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              </Badge>
+            </div>
+          );
+        })}
+        {items.length === 0 && <p className="text-sm text-muted-foreground">No upcoming deadlines in your courses.</p>}
+      </div>
+    </Card>
+  );
+}
+
