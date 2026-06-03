@@ -1,12 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RoleGuard } from "@/components/role-guard";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CircularProgress } from "@/components/circular-progress";
-import { BookOpen, ClipboardList } from "lucide-react";
+import { BookOpen, ClipboardList, CalendarDays, Megaphone, AlertTriangle, Clock } from "lucide-react";
+import { listUpcomingForStudent } from "@/lib/calendar.functions";
+import { listAnnouncements } from "@/lib/announcements.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/student/dashboard")({
   component: () => <RoleGuard role="student"><StudentDashboard /></RoleGuard>,
@@ -14,6 +19,8 @@ export const Route = createFileRoute("/student/dashboard")({
 
 function StudentDashboard() {
   const { profile } = useAuth();
+  const upcomingFn = useServerFn(listUpcomingForStudent);
+  const annFn = useServerFn(listAnnouncements);
 
   const enrollments = useQuery({
     queryKey: ["student", "enrollments", profile?.id],
@@ -27,24 +34,22 @@ function StudentDashboard() {
     },
   });
 
-  const tasks = useQuery({
-    queryKey: ["tasks", profile?.id],
-    enabled: !!profile,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("pending_tasks")
-        .select("id,title,due_date,completed")
-        .eq("user_id", profile!.id)
-        .order("due_date", { ascending: true });
-      return data ?? [];
-    },
+  const upcoming = useQuery({
+    queryKey: ["calendar", "student", "dashboard"],
+    queryFn: () => upcomingFn({ data: { days: 14 } }),
+  });
+  const announcements = useQuery({
+    queryKey: ["announcements", "dashboard"],
+    queryFn: () => annFn({ data: {} }),
   });
 
   const courses = enrollments.data ?? [];
   const overall = courses.length
     ? Math.round(courses.reduce((s, c) => s + (c.progress ?? 0), 0) / courses.length)
     : 0;
-  const pending = (tasks.data ?? []).filter((t) => !t.completed);
+  const upcomingItems = (upcoming.data ?? []).slice(0, 5);
+  const annItems = (announcements.data ?? []).slice(0, 3);
+  const now = Date.now();
 
   return (
     <div className="space-y-8">
@@ -82,18 +87,49 @@ function StudentDashboard() {
         </Card>
       </div>
 
-      <Card className="p-6">
-        <h2 className="font-heading text-lg font-semibold flex items-center gap-2 mb-4"><ClipboardList className="h-5 w-5 text-primary" />Pending tasks</h2>
-        <div className="space-y-2">
-          {pending.map((t) => (
-            <div key={t.id} className="flex items-center justify-between rounded-lg border border-border p-3">
-              <p className="font-medium">{t.title}</p>
-              {t.due_date && <span className="text-xs text-muted-foreground">Due {new Date(t.due_date).toLocaleDateString()}</span>}
-            </div>
-          ))}
-          {pending.length === 0 && <p className="text-sm text-muted-foreground">All caught up. Nice work!</p>}
-        </div>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-heading text-lg font-semibold flex items-center gap-2"><CalendarDays className="h-5 w-5 text-primary" />Upcoming deadlines</h2>
+            <Link to="/calendar" className="text-xs text-primary hover:underline">View all</Link>
+          </div>
+          <div className="space-y-2">
+            {upcomingItems.map((it: any) => {
+              const overdue = new Date(it.due_date).getTime() < now;
+              return (
+                <div key={it.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{it.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{it.course_title}</p>
+                  </div>
+                  <Badge variant={overdue ? "destructive" : "outline"} className="shrink-0 flex items-center gap-1">
+                    {overdue ? <AlertTriangle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    {new Date(it.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </Badge>
+                </div>
+              );
+            })}
+            {upcomingItems.length === 0 && <p className="text-sm text-muted-foreground">No deadlines in the next 2 weeks. Nice!</p>}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-heading text-lg font-semibold flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" />Latest announcements</h2>
+            <Link to="/announcements" className="text-xs text-primary hover:underline">View all</Link>
+          </div>
+          <div className="space-y-2">
+            {annItems.map((a: any) => (
+              <Link key={a.id} to="/announcements" className={cn("block rounded-lg border border-border p-3 transition-colors hover:bg-accent/40", !a.read && "border-primary/40 bg-accent/20")}>
+                <p className="font-medium text-sm truncate">{a.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{a.course_title ?? "Platform-wide"} · {new Date(a.created_at).toLocaleDateString()}</p>
+              </Link>
+            ))}
+            {annItems.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
+

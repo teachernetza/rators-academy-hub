@@ -1,13 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RoleGuard } from "@/components/role-guard";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, ClipboardList, Users, MessageSquare } from "lucide-react";
+import { BookOpen, ClipboardList, Users, MessageSquare, CalendarDays, Clock } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
+import { listUpcomingForTeacher } from "@/lib/calendar.functions";
 
 export const Route = createFileRoute("/teacher/dashboard")({
   component: () => <RoleGuard role="teacher"><TeacherDashboard /></RoleGuard>,
