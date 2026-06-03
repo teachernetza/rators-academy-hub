@@ -319,6 +319,15 @@ function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { course
         </div>
       )}
 
+      {(type === "activity" || type === "quiz") && (
+        <div className="space-y-2">
+          <Label>Due date (optional)</Label>
+          <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Students will see this in their calendar and on the lesson.</p>
+        </div>
+      )}
+
+
       <DialogFooter>
         <Button type="submit" disabled={pending}>{pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save</Button>
       </DialogFooter>
