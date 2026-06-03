@@ -16,6 +16,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#3B5BFE" },
       { title: "Rators Academy" },
       { name: "description", content: "Rators Academy — Learning Management System" },
       { property: "og:title", content: "Rators Academy" },
@@ -39,7 +40,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap",
       },
     ],
-    meta2: [{ name: "theme-color", content: "#3B5BFE" }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -68,6 +68,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    registerPwa();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
