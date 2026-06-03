@@ -173,7 +173,7 @@ function EditLessonDialog({ lesson, courseId }: { lesson: any; courseId: string 
   const [open, setOpen] = useState(false);
   const update = useServerFn(updateLesson);
   const m = useMutation({
-    mutationFn: (vars: any) => update({ data: { id: lesson.id, title: vars.title, content: vars.content } }),
+    mutationFn: (vars: any) => update({ data: { id: lesson.id, title: vars.title, content: vars.content, due_date: vars.due_date } }),
     onSuccess: () => { toast.success("Lesson updated"); setOpen(false); qc.invalidateQueries({ queryKey: ["course-tree", courseId] }); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -197,6 +197,9 @@ function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { course
   const [filePath, setFilePath] = useState<string>(initial?.content?.file_path ?? "");
   const [fileName, setFileName] = useState<string>(initial?.content?.file_name ?? "");
   const [uploading, setUploading] = useState(false);
+  const [dueDate, setDueDate] = useState<string>(
+    initial?.due_date ? new Date(initial.due_date).toISOString().slice(0, 16) : "",
+  );
   const [questions, setQuestions] = useState<Array<{ text: string; options: string[]; correct: number; points: number }>>(
     initial?.content?.questions ?? [{ text: "", options: ["", "", "", ""], correct: 0, points: 1 }],
   );
@@ -225,7 +228,11 @@ function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { course
     else if (type === "reading") content = { body };
     else if (type === "file") content = { file_path: filePath, file_name: fileName };
     else content = { questions };
-    onSubmit({ title, type, content });
+    const supportsDue = type === "activity" || type === "quiz";
+    onSubmit({
+      title, type, content,
+      due_date: supportsDue && dueDate ? new Date(dueDate).toISOString() : null,
+    });
   };
 
   return (
@@ -311,6 +318,15 @@ function LessonForm({ courseId, initial, lockType, onSubmit, pending }: { course
           </Button>
         </div>
       )}
+
+      {(type === "activity" || type === "quiz") && (
+        <div className="space-y-2">
+          <Label>Due date (optional)</Label>
+          <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Students will see this in their calendar and on the lesson.</p>
+        </div>
+      )}
+
 
       <DialogFooter>
         <Button type="submit" disabled={pending}>{pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save</Button>

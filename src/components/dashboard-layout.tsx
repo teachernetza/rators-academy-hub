@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Settings, LogOut,
   ClipboardList, UserCircle, Menu, BarChart3, Compass, Award,
+  Megaphone, CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/admin/teachers", label: "Teachers", icon: GraduationCap },
     { to: "/admin/students", label: "Students", icon: Users },
     { to: "/admin/courses", label: "Courses", icon: BookOpen },
+    { to: "/announcements", label: "Announcements", icon: Megaphone },
     { to: "/admin/settings", label: "Settings", icon: Settings },
   ],
   teacher: [
@@ -27,6 +29,8 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/teacher/courses", label: "My Courses", icon: BookOpen },
     { to: "/teacher/students", label: "Students", icon: Users },
     { to: "/teacher/grading", label: "Grading", icon: ClipboardList },
+    { to: "/calendar", label: "Calendar", icon: CalendarDays },
+    { to: "/announcements", label: "Announcements", icon: Megaphone },
     { to: "/teacher/pending", label: "Pending", icon: ClipboardList },
     { to: "/teacher/profile", label: "Profile", icon: UserCircle },
   ],
@@ -34,6 +38,8 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/student/courses", label: "My Courses", icon: BookOpen },
     { to: "/student/catalog", label: "Catalog", icon: Compass },
+    { to: "/calendar", label: "Calendar", icon: CalendarDays },
+    { to: "/announcements", label: "Announcements", icon: Megaphone },
     { to: "/student/progress", label: "Progress", icon: BarChart3 },
     { to: "/student/certificates", label: "Certificates", icon: Award },
     { to: "/student/pending", label: "Pending", icon: ClipboardList },

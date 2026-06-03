@@ -72,6 +72,57 @@ export type Database = {
           },
         ]
       }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          id?: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          author_id: string
+          body: string
+          course_id: string | null
+          created_at: string
+          id: string
+          pinned: boolean
+          title: string
+        }
+        Insert: {
+          author_id: string
+          body?: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           course_id: string
@@ -330,6 +381,7 @@ export type Database = {
         Row: {
           content: Json
           created_at: string
+          due_date: string | null
           id: string
           order_index: number
           section_id: string
@@ -339,6 +391,7 @@ export type Database = {
         Insert: {
           content?: Json
           created_at?: string
+          due_date?: string | null
           id?: string
           order_index?: number
           section_id: string
@@ -348,6 +401,7 @@ export type Database = {
         Update: {
           content?: Json
           created_at?: string
+          due_date?: string | null
           id?: string
           order_index?: number
           section_id?: string

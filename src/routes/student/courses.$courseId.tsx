@@ -17,7 +17,7 @@ import { listComments, postComment, deleteComment } from "@/lib/comments.functio
 import { getNote, saveNote } from "@/lib/notes.functions";
 import {
   CheckCircle2, Lock, Video, ClipboardList, HelpCircle, ChevronLeft, Loader2, Upload,
-  BookOpen, FileText, MessageSquare, NotebookPen, Send, Trash2, Download,
+  BookOpen, FileText, MessageSquare, NotebookPen, Send, Trash2, Download, AlertTriangle, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -111,8 +111,21 @@ function LessonView({ lesson, courseId }: { lesson: any; courseId: string }) {
   return (
     <div className="space-y-4">
       <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-2xl font-bold">{lesson.title}</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-heading text-2xl font-bold">{lesson.title}</h2>
+            {lesson.due_date && (() => {
+              const due = new Date(lesson.due_date).getTime();
+              const overdue = due < Date.now() && !data.completed;
+              const soon = !overdue && due - Date.now() < 86400000 * 3;
+              return (
+                <Badge variant={overdue ? "destructive" : soon ? "default" : "outline"} className="flex items-center gap-1">
+                  {overdue ? <AlertTriangle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                  Due {new Date(lesson.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </Badge>
+              );
+            })()}
+          </div>
           <Badge variant="secondary" className="capitalize">{lesson.type}</Badge>
         </div>
 
