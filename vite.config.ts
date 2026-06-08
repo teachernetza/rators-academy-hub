@@ -2,7 +2,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  nitro: true,
+  nitro: { preset: "vercel" },
   plugins: [
     VitePWA({
       registerType: "autoUpdate",
