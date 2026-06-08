@@ -1,10 +1,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
+const isVercelBuild = process.env.VERCEL === "1";
+
 export default defineConfig({
-  nitro: true,
+  nitro: { preset: "vercel" },
   plugins: [
     VitePWA({
+      outDir: isVercelBuild ? ".vercel/output/static" : "dist",
       registerType: "autoUpdate",
       injectRegister: null,
       devOptions: { enabled: false },
