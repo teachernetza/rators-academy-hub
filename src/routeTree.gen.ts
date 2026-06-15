@@ -19,6 +19,7 @@ import { Route as TeacherPendingRouteImport } from './routes/teacher/pending'
 import { Route as TeacherGradingRouteImport } from './routes/teacher/grading'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher/dashboard'
 import { Route as TeacherCoursesRouteImport } from './routes/teacher/courses'
+import { Route as TeacherActivitiesRouteImport } from './routes/teacher/activities'
 import { Route as StudentProgressRouteImport } from './routes/student/progress'
 import { Route as StudentProfileRouteImport } from './routes/student/profile'
 import { Route as StudentPendingRouteImport } from './routes/student/pending'
@@ -31,11 +32,14 @@ import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
+import { Route as AdminActivitiesRouteImport } from './routes/admin/activities'
 import { Route as TeacherCoursesCourseIdRouteImport } from './routes/teacher/courses.$courseId'
+import { Route as TeacherActivitiesIdRouteImport } from './routes/teacher/activities.$id'
 import { Route as StudentCoursesCourseIdRouteImport } from './routes/student/courses.$courseId'
 import { Route as StudentCertificatesIdRouteImport } from './routes/student/certificates.$id'
 import { Route as ApiPublicSeedRouteImport } from './routes/api/public/seed'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses.$courseId'
+import { Route as AdminActivitiesIdRouteImport } from './routes/admin/activities.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -85,6 +89,11 @@ const TeacherDashboardRoute = TeacherDashboardRouteImport.update({
 const TeacherCoursesRoute = TeacherCoursesRouteImport.update({
   id: '/teacher/courses',
   path: '/teacher/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherActivitiesRoute = TeacherActivitiesRouteImport.update({
+  id: '/teacher/activities',
+  path: '/teacher/activities',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentProgressRoute = StudentProgressRouteImport.update({
@@ -147,10 +156,20 @@ const AdminCoursesRoute = AdminCoursesRouteImport.update({
   path: '/admin/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminActivitiesRoute = AdminActivitiesRouteImport.update({
+  id: '/admin/activities',
+  path: '/admin/activities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeacherCoursesCourseIdRoute = TeacherCoursesCourseIdRouteImport.update({
   id: '/$courseId',
   path: '/$courseId',
   getParentRoute: () => TeacherCoursesRoute,
+} as any)
+const TeacherActivitiesIdRoute = TeacherActivitiesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => TeacherActivitiesRoute,
 } as any)
 const StudentCoursesCourseIdRoute = StudentCoursesCourseIdRouteImport.update({
   id: '/$courseId',
@@ -172,12 +191,18 @@ const AdminCoursesCourseIdRoute = AdminCoursesCourseIdRouteImport.update({
   path: '/$courseId',
   getParentRoute: () => AdminCoursesRoute,
 } as any)
+const AdminActivitiesIdRoute = AdminActivitiesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminActivitiesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/login': typeof LoginRoute
+  '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -190,16 +215,19 @@ export interface FileRoutesByFullPath {
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
+  '/teacher/activities': typeof TeacherActivitiesRouteWithChildren
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesByTo {
@@ -207,6 +235,7 @@ export interface FileRoutesByTo {
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/login': typeof LoginRoute
+  '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -219,16 +248,19 @@ export interface FileRoutesByTo {
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
+  '/teacher/activities': typeof TeacherActivitiesRouteWithChildren
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRoutesById {
@@ -237,6 +269,7 @@ export interface FileRoutesById {
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/login': typeof LoginRoute
+  '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -249,16 +282,19 @@ export interface FileRoutesById {
   '/student/pending': typeof StudentPendingRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/progress': typeof StudentProgressRoute
+  '/teacher/activities': typeof TeacherActivitiesRouteWithChildren
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
+  '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
+  '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
 }
 export interface FileRouteTypes {
@@ -268,6 +304,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/login'
+    | '/admin/activities'
     | '/admin/courses'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -280,16 +317,19 @@ export interface FileRouteTypes {
     | '/student/pending'
     | '/student/profile'
     | '/student/progress'
+    | '/teacher/activities'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
+    | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -297,6 +337,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/login'
+    | '/admin/activities'
     | '/admin/courses'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -309,16 +350,19 @@ export interface FileRouteTypes {
     | '/student/pending'
     | '/student/profile'
     | '/student/progress'
+    | '/teacher/activities'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
+    | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
   id:
     | '__root__'
@@ -326,6 +370,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/login'
+    | '/admin/activities'
     | '/admin/courses'
     | '/admin/dashboard'
     | '/admin/settings'
@@ -338,16 +383,19 @@ export interface FileRouteTypes {
     | '/student/pending'
     | '/student/profile'
     | '/student/progress'
+    | '/teacher/activities'
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
+    | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
+    | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
   fileRoutesById: FileRoutesById
 }
@@ -356,6 +404,7 @@ export interface RootRouteChildren {
   AnnouncementsRoute: typeof AnnouncementsRoute
   CalendarRoute: typeof CalendarRoute
   LoginRoute: typeof LoginRoute
+  AdminActivitiesRoute: typeof AdminActivitiesRouteWithChildren
   AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -368,6 +417,7 @@ export interface RootRouteChildren {
   StudentPendingRoute: typeof StudentPendingRoute
   StudentProfileRoute: typeof StudentProfileRoute
   StudentProgressRoute: typeof StudentProgressRoute
+  TeacherActivitiesRoute: typeof TeacherActivitiesRouteWithChildren
   TeacherCoursesRoute: typeof TeacherCoursesRouteWithChildren
   TeacherDashboardRoute: typeof TeacherDashboardRoute
   TeacherGradingRoute: typeof TeacherGradingRoute
@@ -447,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/teacher/courses'
       fullPath: '/teacher/courses'
       preLoaderRoute: typeof TeacherCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/activities': {
+      id: '/teacher/activities'
+      path: '/teacher/activities'
+      fullPath: '/teacher/activities'
+      preLoaderRoute: typeof TeacherActivitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/student/progress': {
@@ -533,12 +590,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/activities': {
+      id: '/admin/activities'
+      path: '/admin/activities'
+      fullPath: '/admin/activities'
+      preLoaderRoute: typeof AdminActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/teacher/courses/$courseId': {
       id: '/teacher/courses/$courseId'
       path: '/$courseId'
       fullPath: '/teacher/courses/$courseId'
       preLoaderRoute: typeof TeacherCoursesCourseIdRouteImport
       parentRoute: typeof TeacherCoursesRoute
+    }
+    '/teacher/activities/$id': {
+      id: '/teacher/activities/$id'
+      path: '/$id'
+      fullPath: '/teacher/activities/$id'
+      preLoaderRoute: typeof TeacherActivitiesIdRouteImport
+      parentRoute: typeof TeacherActivitiesRoute
     }
     '/student/courses/$courseId': {
       id: '/student/courses/$courseId'
@@ -568,8 +639,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCoursesCourseIdRouteImport
       parentRoute: typeof AdminCoursesRoute
     }
+    '/admin/activities/$id': {
+      id: '/admin/activities/$id'
+      path: '/$id'
+      fullPath: '/admin/activities/$id'
+      preLoaderRoute: typeof AdminActivitiesIdRouteImport
+      parentRoute: typeof AdminActivitiesRoute
+    }
   }
 }
+
+interface AdminActivitiesRouteChildren {
+  AdminActivitiesIdRoute: typeof AdminActivitiesIdRoute
+}
+
+const AdminActivitiesRouteChildren: AdminActivitiesRouteChildren = {
+  AdminActivitiesIdRoute: AdminActivitiesIdRoute,
+}
+
+const AdminActivitiesRouteWithChildren = AdminActivitiesRoute._addFileChildren(
+  AdminActivitiesRouteChildren,
+)
 
 interface AdminCoursesRouteChildren {
   AdminCoursesCourseIdRoute: typeof AdminCoursesCourseIdRoute
@@ -606,6 +696,17 @@ const StudentCoursesRouteWithChildren = StudentCoursesRoute._addFileChildren(
   StudentCoursesRouteChildren,
 )
 
+interface TeacherActivitiesRouteChildren {
+  TeacherActivitiesIdRoute: typeof TeacherActivitiesIdRoute
+}
+
+const TeacherActivitiesRouteChildren: TeacherActivitiesRouteChildren = {
+  TeacherActivitiesIdRoute: TeacherActivitiesIdRoute,
+}
+
+const TeacherActivitiesRouteWithChildren =
+  TeacherActivitiesRoute._addFileChildren(TeacherActivitiesRouteChildren)
+
 interface TeacherCoursesRouteChildren {
   TeacherCoursesCourseIdRoute: typeof TeacherCoursesCourseIdRoute
 }
@@ -623,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnnouncementsRoute: AnnouncementsRoute,
   CalendarRoute: CalendarRoute,
   LoginRoute: LoginRoute,
+  AdminActivitiesRoute: AdminActivitiesRouteWithChildren,
   AdminCoursesRoute: AdminCoursesRouteWithChildren,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -635,6 +737,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudentPendingRoute: StudentPendingRoute,
   StudentProfileRoute: StudentProfileRoute,
   StudentProgressRoute: StudentProgressRoute,
+  TeacherActivitiesRoute: TeacherActivitiesRouteWithChildren,
   TeacherCoursesRoute: TeacherCoursesRouteWithChildren,
   TeacherDashboardRoute: TeacherDashboardRoute,
   TeacherGradingRoute: TeacherGradingRoute,
