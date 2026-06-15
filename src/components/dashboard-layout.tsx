@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Settings, LogOut,
   ClipboardList, UserCircle, Menu, BarChart3, Compass, Award,
-  Megaphone, CalendarDays,
+  Megaphone, CalendarDays, FileText, Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/admin/teachers", label: "Teachers", icon: GraduationCap },
     { to: "/admin/students", label: "Students", icon: Users },
     { to: "/admin/courses", label: "Courses", icon: BookOpen },
+    { to: "/admin/activities", label: "Activities", icon: FileText },
     { to: "/announcements", label: "Announcements", icon: Megaphone },
     { to: "/admin/settings", label: "Settings", icon: Settings },
   ],
@@ -28,6 +29,8 @@ const NAV: Record<AppRole, NavItem[]> = {
     { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/teacher/courses", label: "My Courses", icon: BookOpen },
     { to: "/teacher/students", label: "Students", icon: Users },
+    { to: "/teacher/activities", label: "Activities", icon: FileText },
+    { to: "/teacher/inbox", label: "Review Inbox", icon: Inbox },
     { to: "/teacher/grading", label: "Grading", icon: ClipboardList },
     { to: "/calendar", label: "Calendar", icon: CalendarDays },
     { to: "/announcements", label: "Announcements", icon: Megaphone },
@@ -37,6 +40,7 @@ const NAV: Record<AppRole, NavItem[]> = {
   student: [
     { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/student/courses", label: "My Courses", icon: BookOpen },
+    { to: "/student/activities", label: "Activities", icon: FileText },
     { to: "/student/catalog", label: "Catalog", icon: Compass },
     { to: "/calendar", label: "Calendar", icon: CalendarDays },
     { to: "/announcements", label: "Announcements", icon: Megaphone },

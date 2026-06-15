@@ -14,6 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          cefr_level: Database["public"]["Enums"]["cefr_level"]
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_published: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cefr_level: Database["public"]["Enums"]["cefr_level"]
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cefr_level?: Database["public"]["Enums"]["cefr_level"]
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activity_assignments: {
+        Row: {
+          activity_id: string
+          approved_at: string | null
+          assigned_at: string
+          assigned_by: string
+          created_at: string
+          current_reviewer_id: string | null
+          due_date: string | null
+          id: string
+          status: Database["public"]["Enums"]["assignment_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          activity_id: string
+          approved_at?: string | null
+          assigned_at?: string
+          assigned_by: string
+          created_at?: string
+          current_reviewer_id?: string | null
+          due_date?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string
+          approved_at?: string | null
+          assigned_at?: string
+          assigned_by?: string
+          created_at?: string
+          current_reviewer_id?: string | null
+          due_date?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_assignments_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_sections: {
+        Row: {
+          activity_id: string
+          config: Json
+          created_at: string
+          id: string
+          instructions: string | null
+          order_index: number
+          section_type: Database["public"]["Enums"]["activity_section_type"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          activity_id: string
+          config?: Json
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          order_index?: number
+          section_type: Database["public"]["Enums"]["activity_section_type"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          order_index?: number
+          section_type?: Database["public"]["Enums"]["activity_section_type"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_sections_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_submissions: {
         Row: {
           feedback: string | null
@@ -122,6 +249,56 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          attempt_number: number
+          created_at: string
+          id: string
+          overall_feedback: string | null
+          overall_status: Database["public"]["Enums"]["submission_status"]
+          reviewed_at: string | null
+          reviewer_id: string | null
+          submitted_at: string
+          submitted_to: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          overall_feedback?: string | null
+          overall_status?: Database["public"]["Enums"]["submission_status"]
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          submitted_at?: string
+          submitted_to: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          overall_feedback?: string | null
+          overall_status?: Database["public"]["Enums"]["submission_status"]
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          submitted_at?: string
+          submitted_to?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "activity_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       certificates: {
         Row: {
@@ -566,6 +743,57 @@ export type Database = {
           },
         ]
       }
+      submission_section_responses: {
+        Row: {
+          created_at: string
+          id: string
+          response: Json
+          reviewed_at: string | null
+          section_id: string
+          section_status: Database["public"]["Enums"]["section_response_status"]
+          submission_id: string
+          teacher_comment: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          response?: Json
+          reviewed_at?: string | null
+          section_id: string
+          section_status?: Database["public"]["Enums"]["section_response_status"]
+          submission_id: string
+          teacher_comment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          response?: Json
+          reviewed_at?: string | null
+          section_id?: string
+          section_status?: Database["public"]["Enums"]["section_response_status"]
+          submission_id?: string
+          teacher_comment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_section_responses_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "activity_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_section_responses_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -592,7 +820,19 @@ export type Database = {
       }
     }
     Enums: {
+      activity_section_type: "open_text" | "match_pairs" | "order_words"
       app_role: "admin" | "teacher" | "student"
+      assignment_status:
+        | "pending"
+        | "in_review"
+        | "changes_requested"
+        | "approved"
+      cefr_level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+      section_response_status:
+        | "pending_review"
+        | "approved"
+        | "changes_requested"
+      submission_status: "in_review" | "changes_requested" | "approved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -720,7 +960,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_section_type: ["open_text", "match_pairs", "order_words"],
       app_role: ["admin", "teacher", "student"],
+      assignment_status: [
+        "pending",
+        "in_review",
+        "changes_requested",
+        "approved",
+      ],
+      cefr_level: ["A1", "A2", "B1", "B2", "C1", "C2"],
+      section_response_status: [
+        "pending_review",
+        "approved",
+        "changes_requested",
+      ],
+      submission_status: ["in_review", "changes_requested", "approved"],
     },
   },
 } as const
