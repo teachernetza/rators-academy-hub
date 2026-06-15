@@ -435,10 +435,10 @@ export const finalizeReview = createServerFn({ method: "POST" })
       .eq("id", data.submission_id);
     if (sErr) throw new Error(sErr.message);
 
-    const assignmentUpdate: Record<string, unknown> =
+    const assignmentUpdate =
       data.decision === "approved"
-        ? { status: "approved", approved_at: now, current_reviewer_id: null }
-        : { status: "changes_requested" };
+        ? { status: "approved" as const, approved_at: now, current_reviewer_id: null }
+        : { status: "changes_requested" as const };
     const { error: aErr } = await supabaseAdmin
       .from("activity_assignments").update(assignmentUpdate).eq("id", sub!.assignment_id);
     if (aErr) throw new Error(aErr.message);
