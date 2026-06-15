@@ -145,7 +145,7 @@ export function ActivitiesLibrary({ basePath }: { basePath: "/admin/activities" 
               <Link
                 key={a.id}
                 to={`${basePath}/$id` as any}
-                params={{ id: a.id }}
+                params={{ id: a.id } as any}
                 className="group block rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-[var(--shadow-soft)]"
               >
                 <div className="flex items-start justify-between gap-2">
