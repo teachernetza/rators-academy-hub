@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TeacherStudentsRouteImport } from './routes/teacher/students'
 import { Route as TeacherProfileRouteImport } from './routes/teacher/profile'
 import { Route as TeacherPendingRouteImport } from './routes/teacher/pending'
+import { Route as TeacherInboxRouteImport } from './routes/teacher/inbox'
 import { Route as TeacherGradingRouteImport } from './routes/teacher/grading'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher/dashboard'
 import { Route as TeacherCoursesRouteImport } from './routes/teacher/courses'
@@ -27,16 +28,19 @@ import { Route as StudentDashboardRouteImport } from './routes/student/dashboard
 import { Route as StudentCoursesRouteImport } from './routes/student/courses'
 import { Route as StudentCertificatesRouteImport } from './routes/student/certificates'
 import { Route as StudentCatalogRouteImport } from './routes/student/catalog'
+import { Route as StudentActivitiesRouteImport } from './routes/student/activities'
 import { Route as AdminTeachersRouteImport } from './routes/admin/teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as AdminActivitiesRouteImport } from './routes/admin/activities'
+import { Route as TeacherInboxSubmissionIdRouteImport } from './routes/teacher/inbox.$submissionId'
 import { Route as TeacherCoursesCourseIdRouteImport } from './routes/teacher/courses.$courseId'
 import { Route as TeacherActivitiesIdRouteImport } from './routes/teacher/activities.$id'
 import { Route as StudentCoursesCourseIdRouteImport } from './routes/student/courses.$courseId'
 import { Route as StudentCertificatesIdRouteImport } from './routes/student/certificates.$id'
+import { Route as StudentActivitiesAssignmentIdRouteImport } from './routes/student/activities.$assignmentId'
 import { Route as ApiPublicSeedRouteImport } from './routes/api/public/seed'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses.$courseId'
 import { Route as AdminActivitiesIdRouteImport } from './routes/admin/activities.$id'
@@ -74,6 +78,11 @@ const TeacherProfileRoute = TeacherProfileRouteImport.update({
 const TeacherPendingRoute = TeacherPendingRouteImport.update({
   id: '/teacher/pending',
   path: '/teacher/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeacherInboxRoute = TeacherInboxRouteImport.update({
+  id: '/teacher/inbox',
+  path: '/teacher/inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeacherGradingRoute = TeacherGradingRouteImport.update({
@@ -131,6 +140,11 @@ const StudentCatalogRoute = StudentCatalogRouteImport.update({
   path: '/student/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentActivitiesRoute = StudentActivitiesRouteImport.update({
+  id: '/student/activities',
+  path: '/student/activities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
   id: '/admin/teachers',
   path: '/admin/teachers',
@@ -161,6 +175,12 @@ const AdminActivitiesRoute = AdminActivitiesRouteImport.update({
   path: '/admin/activities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeacherInboxSubmissionIdRoute =
+  TeacherInboxSubmissionIdRouteImport.update({
+    id: '/$submissionId',
+    path: '/$submissionId',
+    getParentRoute: () => TeacherInboxRoute,
+  } as any)
 const TeacherCoursesCourseIdRoute = TeacherCoursesCourseIdRouteImport.update({
   id: '/$courseId',
   path: '/$courseId',
@@ -181,6 +201,12 @@ const StudentCertificatesIdRoute = StudentCertificatesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => StudentCertificatesRoute,
 } as any)
+const StudentActivitiesAssignmentIdRoute =
+  StudentActivitiesAssignmentIdRouteImport.update({
+    id: '/$assignmentId',
+    path: '/$assignmentId',
+    getParentRoute: () => StudentActivitiesRoute,
+  } as any)
 const ApiPublicSeedRoute = ApiPublicSeedRouteImport.update({
   id: '/api/public/seed',
   path: '/api/public/seed',
@@ -208,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/activities': typeof StudentActivitiesRouteWithChildren
   '/student/catalog': typeof StudentCatalogRoute
   '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
@@ -219,16 +246,19 @@ export interface FileRoutesByFullPath {
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
+  '/teacher/inbox': typeof TeacherInboxRouteWithChildren
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/activities/$assignmentId': typeof StudentActivitiesAssignmentIdRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
+  '/teacher/inbox/$submissionId': typeof TeacherInboxSubmissionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -241,6 +271,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/activities': typeof StudentActivitiesRouteWithChildren
   '/student/catalog': typeof StudentCatalogRoute
   '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
@@ -252,16 +283,19 @@ export interface FileRoutesByTo {
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
+  '/teacher/inbox': typeof TeacherInboxRouteWithChildren
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/activities/$assignmentId': typeof StudentActivitiesAssignmentIdRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
+  '/teacher/inbox/$submissionId': typeof TeacherInboxSubmissionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -275,6 +309,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
+  '/student/activities': typeof StudentActivitiesRouteWithChildren
   '/student/catalog': typeof StudentCatalogRoute
   '/student/certificates': typeof StudentCertificatesRouteWithChildren
   '/student/courses': typeof StudentCoursesRouteWithChildren
@@ -286,16 +321,19 @@ export interface FileRoutesById {
   '/teacher/courses': typeof TeacherCoursesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grading': typeof TeacherGradingRoute
+  '/teacher/inbox': typeof TeacherInboxRouteWithChildren
   '/teacher/pending': typeof TeacherPendingRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/students': typeof TeacherStudentsRoute
   '/admin/activities/$id': typeof AdminActivitiesIdRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/api/public/seed': typeof ApiPublicSeedRoute
+  '/student/activities/$assignmentId': typeof StudentActivitiesAssignmentIdRoute
   '/student/certificates/$id': typeof StudentCertificatesIdRoute
   '/student/courses/$courseId': typeof StudentCoursesCourseIdRoute
   '/teacher/activities/$id': typeof TeacherActivitiesIdRoute
   '/teacher/courses/$courseId': typeof TeacherCoursesCourseIdRoute
+  '/teacher/inbox/$submissionId': typeof TeacherInboxSubmissionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -310,6 +348,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/activities'
     | '/student/catalog'
     | '/student/certificates'
     | '/student/courses'
@@ -321,16 +360,19 @@ export interface FileRouteTypes {
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
+    | '/teacher/inbox'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
     | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/activities/$assignmentId'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
+    | '/teacher/inbox/$submissionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -343,6 +385,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/activities'
     | '/student/catalog'
     | '/student/certificates'
     | '/student/courses'
@@ -354,16 +397,19 @@ export interface FileRouteTypes {
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
+    | '/teacher/inbox'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
     | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/activities/$assignmentId'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
+    | '/teacher/inbox/$submissionId'
   id:
     | '__root__'
     | '/'
@@ -376,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/students'
     | '/admin/teachers'
+    | '/student/activities'
     | '/student/catalog'
     | '/student/certificates'
     | '/student/courses'
@@ -387,16 +434,19 @@ export interface FileRouteTypes {
     | '/teacher/courses'
     | '/teacher/dashboard'
     | '/teacher/grading'
+    | '/teacher/inbox'
     | '/teacher/pending'
     | '/teacher/profile'
     | '/teacher/students'
     | '/admin/activities/$id'
     | '/admin/courses/$courseId'
     | '/api/public/seed'
+    | '/student/activities/$assignmentId'
     | '/student/certificates/$id'
     | '/student/courses/$courseId'
     | '/teacher/activities/$id'
     | '/teacher/courses/$courseId'
+    | '/teacher/inbox/$submissionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -410,6 +460,7 @@ export interface RootRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
+  StudentActivitiesRoute: typeof StudentActivitiesRouteWithChildren
   StudentCatalogRoute: typeof StudentCatalogRoute
   StudentCertificatesRoute: typeof StudentCertificatesRouteWithChildren
   StudentCoursesRoute: typeof StudentCoursesRouteWithChildren
@@ -421,6 +472,7 @@ export interface RootRouteChildren {
   TeacherCoursesRoute: typeof TeacherCoursesRouteWithChildren
   TeacherDashboardRoute: typeof TeacherDashboardRoute
   TeacherGradingRoute: typeof TeacherGradingRoute
+  TeacherInboxRoute: typeof TeacherInboxRouteWithChildren
   TeacherPendingRoute: typeof TeacherPendingRoute
   TeacherProfileRoute: typeof TeacherProfileRoute
   TeacherStudentsRoute: typeof TeacherStudentsRoute
@@ -476,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/teacher/pending'
       fullPath: '/teacher/pending'
       preLoaderRoute: typeof TeacherPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teacher/inbox': {
+      id: '/teacher/inbox'
+      path: '/teacher/inbox'
+      fullPath: '/teacher/inbox'
+      preLoaderRoute: typeof TeacherInboxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/teacher/grading': {
@@ -555,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/activities': {
+      id: '/student/activities'
+      path: '/student/activities'
+      fullPath: '/student/activities'
+      preLoaderRoute: typeof StudentActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/teachers': {
       id: '/admin/teachers'
       path: '/admin/teachers'
@@ -597,6 +663,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminActivitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/teacher/inbox/$submissionId': {
+      id: '/teacher/inbox/$submissionId'
+      path: '/$submissionId'
+      fullPath: '/teacher/inbox/$submissionId'
+      preLoaderRoute: typeof TeacherInboxSubmissionIdRouteImport
+      parentRoute: typeof TeacherInboxRoute
+    }
     '/teacher/courses/$courseId': {
       id: '/teacher/courses/$courseId'
       path: '/$courseId'
@@ -624,6 +697,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/student/certificates/$id'
       preLoaderRoute: typeof StudentCertificatesIdRouteImport
       parentRoute: typeof StudentCertificatesRoute
+    }
+    '/student/activities/$assignmentId': {
+      id: '/student/activities/$assignmentId'
+      path: '/$assignmentId'
+      fullPath: '/student/activities/$assignmentId'
+      preLoaderRoute: typeof StudentActivitiesAssignmentIdRouteImport
+      parentRoute: typeof StudentActivitiesRoute
     }
     '/api/public/seed': {
       id: '/api/public/seed'
@@ -673,6 +753,17 @@ const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
   AdminCoursesRouteChildren,
 )
 
+interface StudentActivitiesRouteChildren {
+  StudentActivitiesAssignmentIdRoute: typeof StudentActivitiesAssignmentIdRoute
+}
+
+const StudentActivitiesRouteChildren: StudentActivitiesRouteChildren = {
+  StudentActivitiesAssignmentIdRoute: StudentActivitiesAssignmentIdRoute,
+}
+
+const StudentActivitiesRouteWithChildren =
+  StudentActivitiesRoute._addFileChildren(StudentActivitiesRouteChildren)
+
 interface StudentCertificatesRouteChildren {
   StudentCertificatesIdRoute: typeof StudentCertificatesIdRoute
 }
@@ -719,6 +810,18 @@ const TeacherCoursesRouteWithChildren = TeacherCoursesRoute._addFileChildren(
   TeacherCoursesRouteChildren,
 )
 
+interface TeacherInboxRouteChildren {
+  TeacherInboxSubmissionIdRoute: typeof TeacherInboxSubmissionIdRoute
+}
+
+const TeacherInboxRouteChildren: TeacherInboxRouteChildren = {
+  TeacherInboxSubmissionIdRoute: TeacherInboxSubmissionIdRoute,
+}
+
+const TeacherInboxRouteWithChildren = TeacherInboxRoute._addFileChildren(
+  TeacherInboxRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnnouncementsRoute: AnnouncementsRoute,
@@ -730,6 +833,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
+  StudentActivitiesRoute: StudentActivitiesRouteWithChildren,
   StudentCatalogRoute: StudentCatalogRoute,
   StudentCertificatesRoute: StudentCertificatesRouteWithChildren,
   StudentCoursesRoute: StudentCoursesRouteWithChildren,
@@ -741,6 +845,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeacherCoursesRoute: TeacherCoursesRouteWithChildren,
   TeacherDashboardRoute: TeacherDashboardRoute,
   TeacherGradingRoute: TeacherGradingRoute,
+  TeacherInboxRoute: TeacherInboxRouteWithChildren,
   TeacherPendingRoute: TeacherPendingRoute,
   TeacherProfileRoute: TeacherProfileRoute,
   TeacherStudentsRoute: TeacherStudentsRoute,
