@@ -5,6 +5,7 @@ import { RoleGuard } from "@/components/role-guard";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { teacherGetStudentMatrix } from "@/lib/grading.functions";
+import { AssignActivityDialog } from "@/components/activities/assign-activity-dialog";
 
 export const Route = createFileRoute("/teacher/students")({
   component: () => <RoleGuard role="teacher"><Page /></RoleGuard>,
@@ -27,6 +28,7 @@ function Page() {
             <TableRow>
               <TableHead>Student</TableHead>
               {data.courses.map((c: any) => <TableHead key={c.id} className="text-center">{c.title}</TableHead>)}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -45,10 +47,13 @@ function Page() {
                     </TableCell>
                   );
                 })}
+                <TableCell className="text-right">
+                  <AssignActivityDialog studentId={s.id} studentName={s.full_name} />
+                </TableCell>
               </TableRow>
             ))}
             {data.students.length === 0 && (
-              <TableRow><TableCell colSpan={data.courses.length + 1} className="text-center text-muted-foreground py-8">No enrolled students yet.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={data.courses.length + 2} className="text-center text-muted-foreground py-8">No enrolled students yet.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
