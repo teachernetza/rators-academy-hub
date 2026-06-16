@@ -1,13 +1,16 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 
-const isVercelBuild = process.env.VERCEL === "1";
-
+// Let the Lovable plugin pick the right Nitro preset:
+//  - Inside Lovable's sandbox/published build it forces `cloudflare-module`.
+//  - On Vercel, Nitro auto-detects via the `VERCEL=1` env var and emits the
+//    Build Output API directory (.vercel/output) automatically.
+// Forcing `preset: "vercel"` here broke the Lovable published deploy because
+// it stopped emitting the Cloudflare worker, leaving only the raw index.html.
 export default defineConfig({
-  nitro: { preset: "vercel" },
+  nitro: true,
   plugins: [
     VitePWA({
-      outDir: isVercelBuild ? ".vercel/output/static" : "dist",
       registerType: "autoUpdate",
       injectRegister: null,
       devOptions: { enabled: false },
@@ -28,7 +31,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: "/",
+        navigateFallback: null,
         navigateFallbackDenylist: [/^\/api\//, /^\/~oauth/, /^\/_serverFn/],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
         runtimeCaching: [
