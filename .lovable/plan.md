@@ -1,50 +1,27 @@
 ## Diagnóstico
 
-El fallo principal no parece ser la base de datos ni las credenciales: la app publicada está sirviendo el `index.html` de desarrollo, que intenta cargar `/src/main.tsx`. En producción ese archivo no debe existir; por eso el navegador recibe HTML como si fuera JavaScript y bloquea la app con:
+La página se queda en blanco porque el HTML que sirve el deploy (tanto Lovable como Vercel) es el `index.html` estático en la raíz del proyecto. Ese archivo contiene:
 
-```text
-Failed to load module script: ... /src/main.tsx ... MIME type "text/html"
+```html
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
 ```
 
-También detecté que falta el entrypoint cliente (`src/main.tsx` o `src/client.tsx`) en el repo, mientras `index.html` todavía referencia `/src/main.tsx`. Esto deja el preview de desarrollo dependiendo de un entry no confirmado y rompe el despliegue estático/SSR.
+Pero `src/main.tsx` **no existe** — este proyecto usa TanStack Start v1, que genera el HTML de SSR a través del `shellComponent` en `src/routes/__root.tsx`. El `index.html` heredado de un template anterior (Vite SPA) está secuestrando el build: el bundler lo trata como punto de entrada estático, no llama al SSR, y el navegador termina pidiendo `/src/main.tsx` que devuelve HTML → MIME error → pantalla en blanco.
 
-## Plan de corrección
+Las redes confirman exactamente eso: el HTML servido lleva `<script src=".../src/main.tsx">` y no hay ningún bundle de cliente cargado.
 
-1. **Restaurar el arranque cliente correcto de TanStack Start**
-   - Crear/normalizar el entry cliente en `src/main.tsx` usando `StartClient` y `hydrateRoot(document, ...)`.
-   - Mantener el shell SSR actual (`src/routes/__root.tsx`) como fuente del HTML real.
+## Plan
 
-2. **Corregir `index.html` para que no rompa producción**
-   - Actualizarlo para que apunte al entry cliente real y sea compatible con Vite/TanStack Start.
-   - Evitar que el build publicado quede con referencias crudas a `/src/main.tsx` sin transformar.
+1. **Eliminar `index.html` de la raíz.** TanStack Start no lo usa; el HTML lo emite `__root.tsx` (`shellComponent` con `<HeadContent />` + `<Scripts />`).
+2. **Verificar que `src/router.tsx` + `src/routes/__root.tsx` + `src/start.ts` están intactos** (ya confirmado: existen y son correctos).
+3. **Verificar que no quedan referencias a `/src/main.tsx`** en otros archivos del proyecto.
+4. **Dejar `vite.config.ts` y `vercel.json` como están** — `nitro: true` permite que Lovable use `cloudflare-module` y que Vercel auto-detecte `VERCEL=1` y emita `.vercel/output`. No tocar.
+5. **Validar el preview** después del cambio para confirmar que el shell de TanStack se renderiza y la app monta.
 
-3. **Reordenar configuración de deploy**
-   - Revisar y ajustar `vite.config.ts` para no forzar un preset que pueda romper el deploy de Lovable Cloud.
-   - Mantener compatibilidad con Vercel solo si el entorno realmente es Vercel.
-   - Evitar que PWA escriba assets en un directorio incorrecto para Lovable vs Vercel.
+## Archivos afectados
 
-4. **Simplificar/aislar Vercel**
-   - Revisar `vercel.json`; si se usa Build Output API, asegurar que no trate `.vercel/output` como carpeta estática.
-   - Si el build estándar de TanStack/Nitro ya genera salida correcta, quitar restos del adaptador manual obsoleto para evitar confusión.
+- borrar: `index.html`
+- sin cambios: `vite.config.ts`, `vercel.json`, `package.json`, `src/router.tsx`, `src/routes/__root.tsx`, `src/start.ts`
 
-5. **Verificar variables sin exponer secretos**
-   - Confirmar que las variables esperadas existen en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
-   - No modificar los archivos autogenerados de integración ni imprimir valores sensibles.
-
-6. **Añadir guardas de error SSR si faltan**
-   - Revisar si conviene añadir error boundary/default error component para que errores server-side no se conviertan en página en blanco.
-   - Mantenerlo mínimo y enfocado al deploy.
-
-7. **Validación final**
-   - Comprobar en preview que la app carga y ya no intenta pedir `/src/main.tsx` como asset publicado.
-   - Inspeccionar red/console para confirmar que el error MIME desaparece.
-
-## Archivos probables a tocar
-
-- `src/main.tsx` o `src/client.tsx`
-- `index.html`
-- `vite.config.ts`
-- `vercel.json`
-- opcionalmente `src/router.tsx` / `src/routes/__root.tsx` solo si hace falta boundary de error
-
-No tocaré claves privadas ni archivos autogenerados de la integración backend.
+Después de implementar, el deploy de Lovable y el de Vercel servirán el HTML generado por SSR con los scripts del bundle correctos, y la app cargará.
