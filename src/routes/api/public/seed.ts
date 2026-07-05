@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { (await admin()) as _SupabaseAdmin } from "@/integrations/supabase/client.server";
-let __supabaseAdmin: typeof _SupabaseAdmin | undefined;
-async function admin() {
-  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).(await admin());
+type _AdminClient = typeof import("@/integrations/supabase/client.server")["supabaseAdmin"];
+let __supabaseAdmin: _AdminClient | undefined;
+async function admin(): Promise<_AdminClient> {
+  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).supabaseAdmin;
   return __supabaseAdmin;
 }
 const DEMO_USERS = [
