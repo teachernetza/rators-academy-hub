@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
+type _AdminClient = typeof import("@/integrations/supabase/client.server")["supabaseAdmin"];
+let __supabaseAdmin: _AdminClient | undefined;
+async function admin(): Promise<_AdminClient> {
+  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  return __supabaseAdmin;
+}
 const DEMO_USERS = [
   { email: "admin@ratorsacademy.com", password: "Admin1234!", full_name: "Admin Rators", role: "admin" as const },
   { email: "teacher@ratorsacademy.com", password: "Teacher1234!", full_name: "Ms. García", role: "teacher" as const },
@@ -10,23 +14,23 @@ const DEMO_USERS = [
 async function ensureUser(u: typeof DEMO_USERS[number], existing: Map<string | undefined, any>) {
   let user = existing.get(u.email);
   if (!user) {
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    const { data, error } = await (await admin()).auth.admin.createUser({
       email: u.email, password: u.password, email_confirm: true,
       user_metadata: { full_name: u.full_name, role: u.role },
     });
     if (error) throw new Error(`createUser ${u.email}: ${error.message}`);
     user = data.user!;
   }
-  await supabaseAdmin.from("profiles").upsert({
+  await (await admin()).from("profiles").upsert({
     id: user.id, full_name: u.full_name, role: u.role, status: "active", is_active: true,
   });
   return user.id as string;
 }
 
 async function ensureCourse(title: string, description: string, cover: string, teacherId: string) {
-  const { data: existing } = await supabaseAdmin.from("courses").select("id").eq("title", title).eq("teacher_id", teacherId).maybeSingle();
+  const { data: existing } = await (await admin()).from("courses").select("id").eq("title", title).eq("teacher_id", teacherId).maybeSingle();
   if (existing) return existing.id as string;
-  const { data, error } = await supabaseAdmin.from("courses").insert({
+  const { data, error } = await (await admin()).from("courses").insert({
     title, description, cover_image_url: cover, teacher_id: teacherId, status: "published",
   }).select("id").single();
   if (error) throw new Error(error.message);
@@ -34,23 +38,23 @@ async function ensureCourse(title: string, description: string, cover: string, t
 }
 
 async function ensureSection(courseId: string, title: string, order: number) {
-  const { data: ex } = await supabaseAdmin.from("sections").select("id").eq("course_id", courseId).eq("title", title).maybeSingle();
+  const { data: ex } = await (await admin()).from("sections").select("id").eq("course_id", courseId).eq("title", title).maybeSingle();
   if (ex) return ex.id as string;
-  const { data, error } = await supabaseAdmin.from("sections").insert({ course_id: courseId, title, order_index: order }).select("id").single();
+  const { data, error } = await (await admin()).from("sections").insert({ course_id: courseId, title, order_index: order }).select("id").single();
   if (error) throw new Error(error.message);
   return data.id as string;
 }
 
 async function ensureLesson(sectionId: string, title: string, type: "video" | "activity" | "quiz", order: number, content: any) {
-  const { data: ex } = await supabaseAdmin.from("lessons").select("id").eq("section_id", sectionId).eq("title", title).maybeSingle();
+  const { data: ex } = await (await admin()).from("lessons").select("id").eq("section_id", sectionId).eq("title", title).maybeSingle();
   if (ex) return ex.id as string;
-  const { data, error } = await supabaseAdmin.from("lessons").insert({ section_id: sectionId, title, type, order_index: order, content }).select("id").single();
+  const { data, error } = await (await admin()).from("lessons").insert({ section_id: sectionId, title, type, order_index: order, content }).select("id").single();
   if (error) throw new Error(error.message);
   return data.id as string;
 }
 
 async function seed() {
-  const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+  const { data: existing } = await (await admin()).auth.admin.listUsers({ perPage: 200 });
   const byEmail = new Map(existing.users.map((u) => [u.email, u]));
   const ids: Record<string, string> = {};
   for (const u of DEMO_USERS) ids[u.role] = await ensureUser(u, byEmail);
@@ -108,36 +112,36 @@ async function seed() {
 
   // Enrollments
   for (const cid of [c1, c2]) {
-    await supabaseAdmin.from("enrollments").upsert({ student_id: studentId, course_id: cid, progress: 0 }, { onConflict: "student_id,course_id" });
+    await (await admin()).from("enrollments").upsert({ student_id: studentId, course_id: cid, progress: 0 }, { onConflict: "student_id,course_id" });
   }
 
   // Mark some lessons complete (~40%): first 2 of course 1 + first lesson of course 2
   for (const lid of [lessons[0], lessons[1], l6]) {
-    await supabaseAdmin.from("lesson_completions").upsert({ student_id: studentId, lesson_id: lid }, { onConflict: "student_id,lesson_id" });
+    await (await admin()).from("lesson_completions").upsert({ student_id: studentId, lesson_id: lid }, { onConflict: "student_id,lesson_id" });
   }
 
   // Recompute enrollment progress
   for (const cid of [c1, c2]) {
-    const { data: secs } = await supabaseAdmin.from("sections").select("id").eq("course_id", cid);
+    const { data: secs } = await (await admin()).from("sections").select("id").eq("course_id", cid);
     const sids = (secs ?? []).map((s) => s.id);
-    const { data: ls } = await supabaseAdmin.from("lessons").select("id").in("section_id", sids);
+    const { data: ls } = await (await admin()).from("lessons").select("id").in("section_id", sids);
     const lids = (ls ?? []).map((l) => l.id);
     if (!lids.length) continue;
-    const { count } = await supabaseAdmin.from("lesson_completions")
+    const { count } = await (await admin()).from("lesson_completions")
       .select("*", { count: "exact", head: true })
       .eq("student_id", studentId).in("lesson_id", lids);
-    await supabaseAdmin.from("enrollments").update({ progress: Math.round(((count ?? 0) / lids.length) * 100) })
+    await (await admin()).from("enrollments").update({ progress: Math.round(((count ?? 0) / lids.length) * 100) })
       .eq("student_id", studentId).eq("course_id", cid);
   }
 
   // Seed 2 ungraded activity submissions for Juan if none exist
   const activityLessons = [lessons[3], lessons[4]]; // essay + reflection
   for (const lid of activityLessons) {
-    const { count } = await supabaseAdmin.from("activity_submissions")
+    const { count } = await (await admin()).from("activity_submissions")
       .select("*", { count: "exact", head: true })
       .eq("student_id", studentId).eq("lesson_id", lid);
     if (!count) {
-      await supabaseAdmin.from("activity_submissions").insert({
+      await (await admin()).from("activity_submissions").insert({
         student_id: studentId, lesson_id: lid,
         file_url: `${studentId}/${lid}/sample-submission.txt`,
       });
@@ -145,10 +149,10 @@ async function seed() {
   }
 
   // Seed 1 quiz attempt
-  const { count: qc } = await supabaseAdmin.from("quiz_attempts")
+  const { count: qc } = await (await admin()).from("quiz_attempts")
     .select("*", { count: "exact", head: true }).eq("student_id", studentId).eq("lesson_id", lessons[1]);
   if (!qc) {
-    await supabaseAdmin.from("quiz_attempts").insert({
+    await (await admin()).from("quiz_attempts").insert({
       student_id: studentId, lesson_id: lessons[1],
       answers: [1, 2, 0], score: 3, total_points: 3,
     });
@@ -156,10 +160,10 @@ async function seed() {
 
   // Pending tasks (idempotent for each user — only seed if none)
   const seedTasks = async (uid: string, role: "admin" | "teacher" | "student", titles: string[]) => {
-    const { count } = await supabaseAdmin.from("pending_tasks").select("*", { count: "exact", head: true }).eq("user_id", uid);
+    const { count } = await (await admin()).from("pending_tasks").select("*", { count: "exact", head: true }).eq("user_id", uid);
     if ((count ?? 0) > 0) return;
     const now = Date.now();
-    await supabaseAdmin.from("pending_tasks").insert(titles.map((title, i) => ({
+    await (await admin()).from("pending_tasks").insert(titles.map((title, i) => ({
       user_id: uid, title, due_date: new Date(now + (i + 1) * 86400000 * 2).toISOString(),
       completed: false, role_target: role,
     })));

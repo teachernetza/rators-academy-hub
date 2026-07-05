@@ -1,14 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
+type _AdminClient = typeof import("@/integrations/supabase/client.server")["supabaseAdmin"];
+let __supabaseAdmin: _AdminClient | undefined;
+async function admin(): Promise<_AdminClient> {
+  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  return __supabaseAdmin;
+}
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const cefrEnum = z.enum(CEFR_LEVELS);
 const sectionTypeEnum = z.enum(["open_text", "match_pairs", "order_words"]);
 
 async function getRole(userId: string) {
-  const { data } = await supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle();
+  const { data } = await (await admin()).from("profiles").select("role").eq("id", userId).maybeSingle();
   return data?.role as "admin" | "teacher" | "student" | undefined;
 }
 
@@ -21,7 +25,7 @@ async function assertStaff(userId: string) {
 async function assertCanEditActivity(userId: string, activityId: string) {
   const role = await getRole(userId);
   if (role === "admin") return;
-  const { data } = await supabaseAdmin.from("activities").select("created_by").eq("id", activityId).maybeSingle();
+  const { data } = await (await admin()).from("activities").select("created_by").eq("id", activityId).maybeSingle();
   if (data?.created_by === userId) return;
   throw new Error("Forbidden");
 }
@@ -34,7 +38,7 @@ export const listActivities = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    let q = supabaseAdmin
+    let q = (await admin())
       .from("activities")
       .select("id, title, description, cefr_level, created_by, is_published, created_at")
       .order("created_at", { ascending: false });
@@ -45,10 +49,10 @@ export const listActivities = createServerFn({ method: "GET" })
     const ids = (rows ?? []).map((r) => r.id);
     const [{ data: counts }, { data: authors }] = await Promise.all([
       ids.length
-        ? supabaseAdmin.from("activity_sections").select("activity_id").in("activity_id", ids)
+        ? (await admin()).from("activity_sections").select("activity_id").in("activity_id", ids)
         : Promise.resolve({ data: [] as { activity_id: string }[] }),
       Promise.resolve({
-        data: (await supabaseAdmin
+        data: (await (await admin())
           .from("profiles")
           .select("id, full_name")
           .in("id", Array.from(new Set((rows ?? []).map((r) => r.created_by))))).data ?? [],
@@ -69,10 +73,10 @@ export const getActivity = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    const { data: activity, error } = await supabaseAdmin
+    const { data: activity, error } = await (await admin())
       .from("activities").select("*").eq("id", data.id).single();
     if (error) throw new Error(error.message);
-    const { data: sections } = await supabaseAdmin
+    const { data: sections } = await (await admin())
       .from("activity_sections").select("*").eq("activity_id", data.id).order("order_index");
     return { activity, sections: sections ?? [] };
   });
@@ -89,7 +93,7 @@ export const createActivity = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => activityInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await (await admin())
       .from("activities")
       .insert({
         title: data.title,
@@ -112,7 +116,7 @@ export const updateActivity = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEditActivity(context.userId, data.id);
     const { id, ...fields } = data;
-    const { error } = await supabaseAdmin.from("activities").update(fields).eq("id", id);
+    const { error } = await (await admin()).from("activities").update(fields).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -122,7 +126,7 @@ export const deleteActivity = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertCanEditActivity(context.userId, data.id);
-    const { error } = await supabaseAdmin.from("activities").delete().eq("id", data.id);
+    const { error } = await (await admin()).from("activities").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -147,18 +151,18 @@ export const saveActivitySections = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEditActivity(context.userId, data.activity_id);
     // Simple strategy: delete then insert in order. Submissions reference section_id; if any exist, refuse.
-    const { count } = await supabaseAdmin
+    const { count } = await (await admin())
       .from("submission_section_responses")
       .select("id", { count: "exact", head: true })
       .in(
         "section_id",
-        (await supabaseAdmin.from("activity_sections").select("id").eq("activity_id", data.activity_id))
+        (await (await admin()).from("activity_sections").select("id").eq("activity_id", data.activity_id))
           .data?.map((s) => s.id) ?? [],
       );
     if ((count ?? 0) > 0) {
       throw new Error("This activity has student submissions and its sections cannot be replaced.");
     }
-    await supabaseAdmin.from("activity_sections").delete().eq("activity_id", data.activity_id);
+    await (await admin()).from("activity_sections").delete().eq("activity_id", data.activity_id);
     if (data.sections.length === 0) return { ok: true };
     const rows = data.sections.map((s, i) => ({
       activity_id: data.activity_id,
@@ -168,7 +172,7 @@ export const saveActivitySections = createServerFn({ method: "POST" })
       config: s.config ?? {},
       order_index: i,
     }));
-    const { error } = await supabaseAdmin.from("activity_sections").insert(rows);
+    const { error } = await (await admin()).from("activity_sections").insert(rows);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -185,10 +189,10 @@ export const assignActivity = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    const { data: student } = await supabaseAdmin
+    const { data: student } = await (await admin())
       .from("profiles").select("role").eq("id", data.student_id).single();
     if (student?.role !== "student") throw new Error("Target is not a student");
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await (await admin())
       .from("activity_assignments")
       .insert({
         activity_id: data.activity_id,
@@ -207,7 +211,7 @@ export const assignActivity = createServerFn({ method: "POST" })
 export const listMyAssignments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (await admin())
       .from("activity_assignments")
       .select("id, status, due_date, assigned_at, approved_at, current_reviewer_id, activity_id")
       .eq("student_id", context.userId)
@@ -215,7 +219,7 @@ export const listMyAssignments = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const ids = Array.from(new Set((data ?? []).map((r) => r.activity_id)));
     const { data: acts } = ids.length
-      ? await supabaseAdmin.from("activities").select("id, title, cefr_level").in("id", ids)
+      ? await (await admin()).from("activities").select("id, title, cefr_level").in("id", ids)
       : { data: [] as { id: string; title: string; cefr_level: string }[] };
     const aMap = new Map(acts!.map((a) => [a.id, a]));
     return (data ?? []).map((r) => ({ ...r, activity: aMap.get(r.activity_id) ?? null }));
@@ -226,15 +230,15 @@ export const getAssignmentForStudent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: a, error } = await supabaseAdmin
+    const { data: a, error } = await (await admin())
       .from("activity_assignments").select("*").eq("id", data.id).single();
     if (error) throw new Error(error.message);
     if (a.student_id !== context.userId) throw new Error("Forbidden");
-    const { data: activity } = await supabaseAdmin
+    const { data: activity } = await (await admin())
       .from("activities").select("*").eq("id", a.activity_id).single();
-    const { data: sections } = await supabaseAdmin
+    const { data: sections } = await (await admin())
       .from("activity_sections").select("*").eq("activity_id", a.activity_id).order("order_index");
-    const { data: subs } = await supabaseAdmin
+    const { data: subs } = await (await admin())
       .from("assignment_submissions")
       .select("*")
       .eq("assignment_id", a.id)
@@ -242,14 +246,14 @@ export const getAssignmentForStudent = createServerFn({ method: "GET" })
     const lastSub = (subs ?? [])[0] ?? null;
     let lastResponses: any[] = [];
     if (lastSub) {
-      const { data: rs } = await supabaseAdmin
+      const { data: rs } = await (await admin())
         .from("submission_section_responses")
         .select("*")
         .eq("submission_id", lastSub.id);
       lastResponses = rs ?? [];
     }
     // Available teachers to send to: prefer last reviewer; list all teachers as fallback
-    const { data: teachers } = await supabaseAdmin
+    const { data: teachers } = await (await admin())
       .from("profiles").select("id, full_name").eq("role", "teacher").eq("is_active", true)
       .order("full_name");
     return { assignment: a, activity, sections: sections ?? [], lastSubmission: lastSub, lastResponses, teachers: teachers ?? [] };
@@ -270,25 +274,25 @@ export const submitAssignment = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: a, error } = await supabaseAdmin
+    const { data: a, error } = await (await admin())
       .from("activity_assignments").select("*").eq("id", data.assignment_id).single();
     if (error) throw new Error(error.message);
     if (a.student_id !== context.userId) throw new Error("Forbidden");
     if (a.status === "approved") throw new Error("Assignment already approved");
     if (a.status === "in_review") throw new Error("Already in review");
 
-    const { data: teacher } = await supabaseAdmin
+    const { data: teacher } = await (await admin())
       .from("profiles").select("role, is_active").eq("id", data.teacher_id).single();
     if (teacher?.role !== "teacher" || teacher?.is_active === false) {
       throw new Error("Invalid teacher");
     }
 
-    const { data: last } = await supabaseAdmin
+    const { data: last } = await (await admin())
       .from("assignment_submissions").select("attempt_number")
       .eq("assignment_id", a.id).order("attempt_number", { ascending: false }).limit(1).maybeSingle();
     const attempt = (last?.attempt_number ?? 0) + 1;
 
-    const { data: sub, error: sErr } = await supabaseAdmin
+    const { data: sub, error: sErr } = await (await admin())
       .from("assignment_submissions")
       .insert({
         assignment_id: a.id,
@@ -305,10 +309,10 @@ export const submitAssignment = createServerFn({ method: "POST" })
       response: r.response,
       section_status: "pending_review" as const,
     }));
-    const { error: rErr } = await supabaseAdmin.from("submission_section_responses").insert(rows);
+    const { error: rErr } = await (await admin()).from("submission_section_responses").insert(rows);
     if (rErr) throw new Error(rErr.message);
 
-    const { error: uErr } = await supabaseAdmin
+    const { error: uErr } = await (await admin())
       .from("activity_assignments")
       .update({ status: "in_review", current_reviewer_id: data.teacher_id })
       .eq("id", a.id);
@@ -322,7 +326,7 @@ export const listTeacherInbox = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertStaff(context.userId);
-    const { data: subs, error } = await supabaseAdmin
+    const { data: subs, error } = await (await admin())
       .from("assignment_submissions")
       .select("id, assignment_id, attempt_number, submitted_at, overall_status")
       .eq("submitted_to", context.userId)
@@ -331,16 +335,16 @@ export const listTeacherInbox = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const aIds = Array.from(new Set((subs ?? []).map((s) => s.assignment_id)));
     const { data: assigns } = aIds.length
-      ? await supabaseAdmin.from("activity_assignments").select("id, activity_id, student_id").in("id", aIds)
+      ? await (await admin()).from("activity_assignments").select("id, activity_id, student_id").in("id", aIds)
       : { data: [] as any[] };
     const actIds = Array.from(new Set((assigns ?? []).map((a) => a.activity_id)));
     const studentIds = Array.from(new Set((assigns ?? []).map((a) => a.student_id)));
     const [{ data: acts }, { data: studs }] = await Promise.all([
       actIds.length
-        ? supabaseAdmin.from("activities").select("id, title, cefr_level").in("id", actIds)
+        ? (await admin()).from("activities").select("id, title, cefr_level").in("id", actIds)
         : Promise.resolve({ data: [] as any[] }),
       studentIds.length
-        ? supabaseAdmin.from("profiles").select("id, full_name").in("id", studentIds)
+        ? (await admin()).from("profiles").select("id, full_name").in("id", studentIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
     const aMap = new Map((assigns ?? []).map((a) => [a.id, a]));
@@ -361,18 +365,18 @@ export const getSubmissionForReview = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    const { data: sub, error } = await supabaseAdmin
+    const { data: sub, error } = await (await admin())
       .from("assignment_submissions").select("*").eq("id", data.id).single();
     if (error) throw new Error(error.message);
     const role = await getRole(context.userId);
     if (role !== "admin" && sub.submitted_to !== context.userId) throw new Error("Forbidden");
-    const { data: a } = await supabaseAdmin.from("activity_assignments").select("*").eq("id", sub.assignment_id).single();
-    const { data: activity } = await supabaseAdmin.from("activities").select("*").eq("id", a!.activity_id).single();
-    const { data: sections } = await supabaseAdmin
+    const { data: a } = await (await admin()).from("activity_assignments").select("*").eq("id", sub.assignment_id).single();
+    const { data: activity } = await (await admin()).from("activities").select("*").eq("id", a!.activity_id).single();
+    const { data: sections } = await (await admin())
       .from("activity_sections").select("*").eq("activity_id", a!.activity_id).order("order_index");
-    const { data: responses } = await supabaseAdmin
+    const { data: responses } = await (await admin())
       .from("submission_section_responses").select("*").eq("submission_id", sub.id);
-    const { data: student } = await supabaseAdmin
+    const { data: student } = await (await admin())
       .from("profiles").select("id, full_name").eq("id", a!.student_id).single();
     return { submission: sub, assignment: a, activity, sections: sections ?? [], responses: responses ?? [], student };
   });
@@ -389,13 +393,13 @@ export const reviewSection = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
     // verify reviewer owns the parent submission
-    const { data: r } = await supabaseAdmin
+    const { data: r } = await (await admin())
       .from("submission_section_responses").select("submission_id").eq("id", data.response_id).single();
-    const { data: sub } = await supabaseAdmin
+    const { data: sub } = await (await admin())
       .from("assignment_submissions").select("submitted_to").eq("id", r!.submission_id).single();
     const role = await getRole(context.userId);
     if (role !== "admin" && sub!.submitted_to !== context.userId) throw new Error("Forbidden");
-    const { error } = await supabaseAdmin
+    const { error } = await (await admin())
       .from("submission_section_responses")
       .update({
         section_status: data.status,
@@ -418,13 +422,13 @@ export const finalizeReview = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context.userId);
-    const { data: sub } = await supabaseAdmin
+    const { data: sub } = await (await admin())
       .from("assignment_submissions").select("*").eq("id", data.submission_id).single();
     const role = await getRole(context.userId);
     if (role !== "admin" && sub!.submitted_to !== context.userId) throw new Error("Forbidden");
 
     const now = new Date().toISOString();
-    const { error: sErr } = await supabaseAdmin
+    const { error: sErr } = await (await admin())
       .from("assignment_submissions")
       .update({
         overall_status: data.decision,
@@ -439,7 +443,7 @@ export const finalizeReview = createServerFn({ method: "POST" })
       data.decision === "approved"
         ? { status: "approved" as const, approved_at: now, current_reviewer_id: null }
         : { status: "changes_requested" as const };
-    const { error: aErr } = await supabaseAdmin
+    const { error: aErr } = await (await admin())
       .from("activity_assignments").update(assignmentUpdate).eq("id", sub!.assignment_id);
     if (aErr) throw new Error(aErr.message);
     return { ok: true };
@@ -450,7 +454,7 @@ export const listStudents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertStaff(context.userId);
-    const { data } = await supabaseAdmin
+    const { data } = await (await admin())
       .from("profiles").select("id, full_name").eq("role", "student").eq("is_active", true)
       .order("full_name");
     return data ?? [];
