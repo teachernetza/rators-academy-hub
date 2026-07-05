@@ -1,10 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
+import type { (await admin()) as _SupabaseAdmin } from "@/integrations/supabase/client.server";
+let __supabaseAdmin: typeof _SupabaseAdmin | undefined;
+async function admin() {
+  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).(await admin());
+  return __supabaseAdmin;
+}
 async function getRole(userId: string) {
-  const { data } = await supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle();
+  const { data } = await (await admin()).from("profiles").select("role").eq("id", userId).maybeSingle();
   return data?.role as "admin" | "teacher" | "student" | undefined;
 }
 
@@ -14,7 +18,7 @@ export const listAnnouncements = createServerFn({ method: "GET" })
     z.object({ courseId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
-    let q = supabaseAdmin
+    let q = (await admin())
       .from("announcements")
       .select("id,title,body,pinned,course_id,author_id,created_at")
       .order("pinned", { ascending: false })
@@ -31,12 +35,12 @@ export const listAnnouncements = createServerFn({ method: "GET" })
     );
     const [{ data: authors }, { data: courses }, { data: reads }] = await Promise.all([
       authorIds.length
-        ? supabaseAdmin.from("profiles").select("id,full_name,role").in("id", authorIds)
+        ? (await admin()).from("profiles").select("id,full_name,role").in("id", authorIds)
         : Promise.resolve({ data: [] as any[] }),
       courseIds.length
-        ? supabaseAdmin.from("courses").select("id,title").in("id", courseIds)
+        ? (await admin()).from("courses").select("id,title").in("id", courseIds)
         : Promise.resolve({ data: [] as any[] }),
-      supabaseAdmin
+      (await admin())
         .from("announcement_reads")
         .select("announcement_id")
         .eq("user_id", context.userId),
@@ -70,7 +74,7 @@ export const createAnnouncement = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const role = await getRole(context.userId);
     if (data.course_id) {
-      const { data: c } = await supabaseAdmin
+      const { data: c } = await (await admin())
         .from("courses")
         .select("teacher_id")
         .eq("id", data.course_id)
@@ -80,7 +84,7 @@ export const createAnnouncement = createServerFn({ method: "POST" })
       throw new Error("Only admins can post platform-wide announcements");
     }
 
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await (await admin())
       .from("announcements")
       .insert({
         title: data.title,
@@ -100,7 +104,7 @@ export const deleteAnnouncement = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const role = await getRole(context.userId);
-    const { data: row } = await supabaseAdmin
+    const { data: row } = await (await admin())
       .from("announcements")
       .select("author_id,course_id")
       .eq("id", data.id)
@@ -108,7 +112,7 @@ export const deleteAnnouncement = createServerFn({ method: "POST" })
     if (!row) return { ok: true };
     let allowed = role === "admin" || row.author_id === context.userId;
     if (!allowed && row.course_id) {
-      const { data: c } = await supabaseAdmin
+      const { data: c } = await (await admin())
         .from("courses")
         .select("teacher_id")
         .eq("id", row.course_id)
@@ -116,7 +120,7 @@ export const deleteAnnouncement = createServerFn({ method: "POST" })
       if (c?.teacher_id === context.userId) allowed = true;
     }
     if (!allowed) throw new Error("Forbidden");
-    const { error } = await supabaseAdmin.from("announcements").delete().eq("id", data.id);
+    const { error } = await (await admin()).from("announcements").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -125,7 +129,7 @@ export const markAnnouncementRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await supabaseAdmin
+    await (await admin())
       .from("announcement_reads")
       .upsert(
         { announcement_id: data.id, user_id: context.userId },
@@ -137,12 +141,12 @@ export const markAnnouncementRead = createServerFn({ method: "POST" })
 export const markAllAnnouncementsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: rows } = await supabaseAdmin
+    const { data: rows } = await (await admin())
       .from("announcements")
       .select("id")
       .limit(200);
     if (!rows?.length) return { ok: true };
-    await supabaseAdmin
+    await (await admin())
       .from("announcement_reads")
       .upsert(
         rows.map((r) => ({ announcement_id: r.id, user_id: context.userId })),
@@ -155,7 +159,7 @@ export const listMyCoursesForAuthoring = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const role = await getRole(context.userId);
-    let q = supabaseAdmin.from("courses").select("id,title").order("title");
+    let q = (await admin()).from("courses").select("id,title").order("title");
     if (role === "teacher") q = q.eq("teacher_id", context.userId);
     else if (role !== "admin") return [];
     const { data } = await q;

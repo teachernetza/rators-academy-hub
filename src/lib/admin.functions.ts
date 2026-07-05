@@ -1,8 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
+import type { (await admin()) as _SupabaseAdmin } from "@/integrations/supabase/client.server";
+let __supabaseAdmin: typeof _SupabaseAdmin | undefined;
+async function admin() {
+  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).(await admin());
+  return __supabaseAdmin;
+}
 function generatePassword(length = 12) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   let out = "";
@@ -13,7 +17,7 @@ function generatePassword(length = 12) {
 }
 
 async function assertAdmin(userId: string) {
-  const { data } = await supabaseAdmin
+  const { data } = await (await admin())
     .from("profiles").select("role").eq("id", userId).maybeSingle();
   if (!data || data.role !== "admin") throw new Error("Forbidden");
 }
@@ -23,10 +27,10 @@ export const adminGetStats = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const [students, teachers, courses, enrollments] = await Promise.all([
-      supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
-      supabaseAdmin.from("profiles").select("*", { count: "exact", head: true }).eq("role", "teacher"),
-      supabaseAdmin.from("courses").select("*", { count: "exact", head: true }),
-      supabaseAdmin.from("enrollments").select("*", { count: "exact", head: true }),
+      (await admin()).from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
+      (await admin()).from("profiles").select("*", { count: "exact", head: true }).eq("role", "teacher"),
+      (await admin()).from("courses").select("*", { count: "exact", head: true }),
+      (await admin()).from("enrollments").select("*", { count: "exact", head: true }),
     ]);
     return {
       students: students.count ?? 0,
@@ -40,7 +44,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
-    const { data } = await supabaseAdmin
+    const { data } = await (await admin())
       .from("profiles")
       .select("id, full_name, role, status, is_active, created_at")
       .order("created_at", { ascending: false });
@@ -59,14 +63,14 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const password = generatePassword();
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+    const { data: created, error } = await (await admin()).auth.admin.createUser({
       email: data.email,
       password,
       email_confirm: true,
       user_metadata: { full_name: data.full_name, role: data.role },
     });
     if (error) throw new Error(error.message);
-    await supabaseAdmin.from("profiles").upsert({
+    await (await admin()).from("profiles").upsert({
       id: created.user!.id,
       full_name: data.full_name,
       role: data.role,
@@ -82,7 +86,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     if (data.id === context.userId) throw new Error("Cannot delete yourself");
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
+    const { error } = await (await admin()).auth.admin.deleteUser(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -94,7 +98,7 @@ export const adminToggleActive = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.from("profiles")
+    const { error } = await (await admin()).from("profiles")
       .update({ is_active: data.is_active, status: data.is_active ? "active" : "inactive" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -106,7 +110,7 @@ export const adminListByRole = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ role: z.enum(["teacher", "student"]) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: rows } = await supabaseAdmin.from("profiles")
+    const { data: rows } = await (await admin()).from("profiles")
       .select("id, full_name").eq("role", data.role).order("full_name");
     return rows ?? [];
   });
@@ -119,7 +123,7 @@ export const adminEnrollStudent = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.from("enrollments")
+    const { error } = await (await admin()).from("enrollments")
       .upsert({ student_id: data.student_id, course_id: data.course_id }, { onConflict: "student_id,course_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
