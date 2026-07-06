@@ -12,6 +12,9 @@ import {
   Sparkles,
   Menu,
   X,
+  ClipboardCheck,
+  FileDown,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -58,6 +61,7 @@ function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
+    { href: "#examen", label: "Examen Diagnóstico" },
     { href: "#metodologia", label: "Metodología" },
     { href: "#planes", label: "Planes" },
     { href: "#contacto", label: "Contacto" },
