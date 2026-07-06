@@ -778,7 +778,7 @@ function ResultsScreen({
 }: {
   studentName: string;
   scores: Scores;
-  radarRef: React.RefObject<HTMLCanvasElement>;
+  radarRef: React.RefObject<HTMLCanvasElement | null>;
   onReset: () => void;
   onDownload: () => void;
   pdfLoading: boolean;
