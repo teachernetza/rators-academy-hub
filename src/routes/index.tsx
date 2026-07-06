@@ -12,6 +12,9 @@ import {
   Sparkles,
   Menu,
   X,
+  ClipboardCheck,
+  FileDown,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -58,6 +61,7 @@ function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
+    { href: "#examen", label: "Examen Diagnóstico" },
     { href: "#metodologia", label: "Metodología" },
     { href: "#planes", label: "Planes" },
     { href: "#contacto", label: "Contacto" },
@@ -159,17 +163,94 @@ function Landing() {
                 primera clase.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <a href="#planes">
+                <Link to="/diagnostic-exam">
                   <Button size="lg" className="shadow-[var(--shadow-elegant)]">
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    Iniciar Examen Diagnóstico
+                  </Button>
+                </Link>
+                <a href="#planes">
+                  <Button size="lg" variant="outline">
                     Ver Planes
                   </Button>
                 </a>
                 <a href={WA_URL} target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline">
+                  <Button size="lg" variant="ghost">
                     <MessageCircle className="mr-2 h-4 w-4" />
-                    Hablar por WhatsApp
+                    WhatsApp
                   </Button>
                 </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* EXAMEN DIAGNÓSTICO — HIGHLIGHT */}
+        <section id="examen" className="relative overflow-hidden py-16 lg:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div
+              className="relative overflow-hidden rounded-3xl p-8 shadow-[var(--shadow-elegant)] sm:p-12"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <div
+                aria-hidden
+                className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+              />
+              <div
+                aria-hidden
+                className="absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+              />
+              <div className="relative grid gap-10 md:grid-cols-[1.2fr,1fr] md:items-center">
+                <div className="text-primary-foreground">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Gratis · Sin registro
+                  </span>
+                  <h2 className="mt-5 font-heading text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+                    Descubre tu nivel real de inglés en 15 minutos
+                  </h2>
+                  <p className="mt-4 text-base text-white/90 sm:text-lg">
+                    Un examen diagnóstico creado por Teacher Netza que evalúa Grammar,
+                    Reading, Vocabulary, Writing y Listening. Al terminar recibes tu nivel
+                    CEFR estimado y un reporte PDF descargable con recomendaciones.
+                  </p>
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <Link to="/diagnostic-exam">
+                      <Button
+                        size="lg"
+                        className="bg-white text-primary hover:bg-white/90 shadow-lg"
+                      >
+                        <ClipboardCheck className="mr-2 h-5 w-5" />
+                        Iniciar Examen Diagnóstico
+                      </Button>
+                    </Link>
+                    <a href="#metodologia">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                      >
+                        Conocer más
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+
+                <ul className="grid gap-3 rounded-2xl border border-white/25 bg-white/10 p-5 text-white backdrop-blur">
+                  {[
+                    { icon: Zap, text: "5 secciones evaluadas: Grammar, Reading, Vocabulary, Writing y Listening." },
+                    { icon: ClipboardCheck, text: "Resultado CEFR (A1 – B2) al instante." },
+                    { icon: FileDown, text: "Reporte PDF descargable con recomendaciones personales." },
+                    { icon: Sparkles, text: "Diseñado por Teacher Netza · +6 años de experiencia." },
+                  ].map((f) => (
+                    <li key={f.text} className="flex items-start gap-3 text-sm">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20">
+                        <f.icon className="h-4 w-4" />
+                      </span>
+                      <span>{f.text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>

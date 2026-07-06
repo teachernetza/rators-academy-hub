@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DiagnosticExamRouteImport } from './routes/diagnostic-exam'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as IndexRouteImport } from './routes/index'
@@ -48,6 +49,11 @@ import { Route as AdminActivitiesIdRouteImport } from './routes/admin/activities
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticExamRoute = DiagnosticExamRouteImport.update({
+  id: '/diagnostic-exam',
+  path: '/diagnostic-exam',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
+  '/diagnostic-exam': typeof DiagnosticExamRoute
   '/login': typeof LoginRoute
   '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
+  '/diagnostic-exam': typeof DiagnosticExamRoute
   '/login': typeof LoginRoute
   '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
+  '/diagnostic-exam': typeof DiagnosticExamRoute
   '/login': typeof LoginRoute
   '/admin/activities': typeof AdminActivitiesRouteWithChildren
   '/admin/courses': typeof AdminCoursesRouteWithChildren
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/'
     | '/announcements'
     | '/calendar'
+    | '/diagnostic-exam'
     | '/login'
     | '/admin/activities'
     | '/admin/courses'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/'
     | '/announcements'
     | '/calendar'
+    | '/diagnostic-exam'
     | '/login'
     | '/admin/activities'
     | '/admin/courses'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/'
     | '/announcements'
     | '/calendar'
+    | '/diagnostic-exam'
     | '/login'
     | '/admin/activities'
     | '/admin/courses'
@@ -453,6 +465,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   CalendarRoute: typeof CalendarRoute
+  DiagnosticExamRoute: typeof DiagnosticExamRoute
   LoginRoute: typeof LoginRoute
   AdminActivitiesRoute: typeof AdminActivitiesRouteWithChildren
   AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
@@ -486,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostic-exam': {
+      id: '/diagnostic-exam'
+      path: '/diagnostic-exam'
+      fullPath: '/diagnostic-exam'
+      preLoaderRoute: typeof DiagnosticExamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -826,6 +846,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   CalendarRoute: CalendarRoute,
+  DiagnosticExamRoute: DiagnosticExamRoute,
   LoginRoute: LoginRoute,
   AdminActivitiesRoute: AdminActivitiesRouteWithChildren,
   AdminCoursesRoute: AdminCoursesRouteWithChildren,
@@ -854,3 +875,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
