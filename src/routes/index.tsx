@@ -9,14 +9,17 @@ import {
   Check,
   Mail,
   MessageCircle,
-  Sparkles,
   Menu,
   X,
   ClipboardCheck,
   FileDown,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import bannerAsset from "@/assets/Banner_Teacher_Netza.png.asset.json";
+import logoAsset from "@/assets/Logo_Teacher_Netza.png.asset.json";
+import iconAsset from "@/assets/Icono_Teacher_Netza.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,7 +54,7 @@ function LandingOrRedirect() {
   return <Landing />;
 }
 
-const WA_NUMBER = "523323111642";
+const WA_NUMBER = "523231116425";
 const WA_MESSAGE =
   "Hola Teacher Netza, me gustaría recibir más información sobre los planes de clases de inglés.";
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
