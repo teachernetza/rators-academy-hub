@@ -25,8 +25,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Plataforma de inglés con Labs interactivos, Conversation Clubs y Masterclasses. Acompañamiento experto con más de 6 años de experiencia." },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/CRzXduIzuVewr7HYHjp0Wb2FmxF2/social-images/social-1783407782670-Logo_Teacher_Netza.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/CRzXduIzuVewr7HYHjp0Wb2FmxF2/social-images/social-1783407782670-Logo_Teacher_Netza.webp" },
+      { property: "og:image", content: "https://rators-academy-hub.lovable.app/__l5e/assets-v1/c61f433b-0fe7-4b60-b600-436c7c01746c/Banner_Teacher_Netza.png" },
+      { name: "twitter:image", content: "https://rators-academy-hub.lovable.app/__l5e/assets-v1/c61f433b-0fe7-4b60-b600-436c7c01746c/Banner_Teacher_Netza.png" },
+      { property: "og:url", content: "https://rators-academy-hub.lovable.app/" },
+      { property: "og:site_name", content: "Teacher Netza Varo" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
