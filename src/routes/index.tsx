@@ -17,9 +17,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
-import bannerAsset from "@/assets/Banner_Teacher_Netza.png.asset.json";
-import logoAsset from "@/assets/Logo_Teacher_Netza.png.asset.json";
-import iconAsset from "@/assets/Icono_Teacher_Netza.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -77,12 +74,12 @@ function Landing() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <a href="#top" className="flex items-center gap-3">
             <img
-              src={iconAsset.url}
+              src="/icono_teacher_netza.png"
               alt="Teacher Netza"
               className="h-10 w-10 object-contain sm:hidden"
             />
             <img
-              src={bannerAsset.url}
+              src="/banner_teacher_netza.png" alt="Teacher Netza"
               alt="Teacher Netza — Clases de Inglés"
               className="hidden h-10 w-auto object-contain sm:block"
             />
@@ -154,7 +151,7 @@ function Landing() {
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="mx-auto max-w-3xl text-center">
               <img
-                src={logoAsset.url}
+                src="/logo_teacher_netza.png"
                 alt="Teacher Netza — Clases de Inglés"
                 className="mx-auto mb-6 h-40 w-auto object-contain sm:h-48"
               />
