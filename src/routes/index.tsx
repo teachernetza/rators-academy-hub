@@ -423,7 +423,7 @@ function Landing() {
                   <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     WhatsApp
                   </div>
-                  <div className="font-heading text-lg font-semibold">323 111 642</div>
+                  <div className="font-heading text-lg font-semibold">323 111 6425</div>
                   <div className="text-sm text-muted-foreground">
                     Respuesta inmediata
                   </div>
