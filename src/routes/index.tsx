@@ -153,6 +153,11 @@ function Landing() {
           />
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="mx-auto max-w-3xl text-center">
+              <img
+                src={logoAsset.url}
+                alt="Teacher Netza — Clases de Inglés"
+                className="mx-auto mb-6 h-40 w-auto object-contain sm:h-48"
+              />
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 +6 años formando estudiantes bilingües
