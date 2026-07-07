@@ -48,7 +48,7 @@ export const Route = createFileRoute("/diagnostic-exam")({
 });
 
 const STORAGE_KEY = "netza.diagnostic.v1";
-const WA_NUMBER = "523323111642";
+const WA_NUMBER = "523231116425";
 
 function emptyAnswers(): Answers {
   return { mcq: {}, reading: {}, vocab: {}, writing: {}, listening: {} };

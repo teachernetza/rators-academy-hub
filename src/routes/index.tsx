@@ -9,14 +9,17 @@ import {
   Check,
   Mail,
   MessageCircle,
-  Sparkles,
   Menu,
   X,
   ClipboardCheck,
   FileDown,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import bannerAsset from "@/assets/Banner_Teacher_Netza.png.asset.json";
+import logoAsset from "@/assets/Logo_Teacher_Netza.png.asset.json";
+import iconAsset from "@/assets/Icono_Teacher_Netza.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,7 +54,7 @@ function LandingOrRedirect() {
   return <Landing />;
 }
 
-const WA_NUMBER = "523323111642";
+const WA_NUMBER = "523231116425";
 const WA_MESSAGE =
   "Hola Teacher Netza, me gustaría recibir más información sobre los planes de clases de inglés.";
 const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
@@ -72,13 +75,17 @@ function Landing() {
       {/* HEADER */}
       <header className="fixed inset-x-0 top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a href="#top" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-elegant)]">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <span className="font-heading text-lg font-bold tracking-tight">
-              Teacher Netza Varo
-            </span>
+          <a href="#top" className="flex items-center gap-3">
+            <img
+              src={iconAsset.url}
+              alt="Teacher Netza"
+              className="h-10 w-10 object-contain sm:hidden"
+            />
+            <img
+              src={bannerAsset.url}
+              alt="Teacher Netza — Clases de Inglés"
+              className="hidden h-10 w-auto object-contain sm:block"
+            />
           </a>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -146,6 +153,11 @@ function Landing() {
           />
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
             <div className="mx-auto max-w-3xl text-center">
+              <img
+                src={logoAsset.url}
+                alt="Teacher Netza — Clases de Inglés"
+                className="mx-auto mb-6 h-40 w-auto object-contain sm:h-48"
+              />
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 +6 años formando estudiantes bilingües
@@ -416,7 +428,7 @@ function Landing() {
                   <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     WhatsApp
                   </div>
-                  <div className="font-heading text-lg font-semibold">323 111 642</div>
+                  <div className="font-heading text-lg font-semibold">323 111 6425</div>
                   <div className="text-sm text-muted-foreground">
                     Respuesta inmediata
                   </div>
