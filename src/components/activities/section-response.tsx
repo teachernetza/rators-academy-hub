@@ -3,13 +3,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GripVertical } from "lucide-react";
+import { GripVertical, CheckCircle2, XCircle } from "lucide-react";
 
 export type SectionLike = {
   id: string;
   title: string;
   instructions: string | null;
-  section_type: "open_text" | "match_pairs" | "order_words";
+  section_type:
+    | "open_text"
+    | "match_pairs"
+    | "order_words"
+    | "multiple_choice"
+    | "multi_select"
+    | "video_questions"
+    | "audio_questions";
   config: any;
 };
 
@@ -40,6 +47,18 @@ export function SectionResponseInput({
   }
   if (section.section_type === "order_words") {
     return <OrderWordsInput section={section} value={value} onChange={onChange} disabled={disabled} />;
+  }
+  if (section.section_type === "multiple_choice") {
+    return <ChoiceQuestionsInput section={section} value={value} onChange={onChange} disabled={disabled} multiple={false} />;
+  }
+  if (section.section_type === "multi_select") {
+    return <ChoiceQuestionsInput section={section} value={value} onChange={onChange} disabled={disabled} multiple />;
+  }
+  if (section.section_type === "video_questions") {
+    return <MediaQuestionsInput section={section} value={value} onChange={onChange} disabled={disabled} type="video" />;
+  }
+  if (section.section_type === "audio_questions") {
+    return <MediaQuestionsInput section={section} value={value} onChange={onChange} disabled={disabled} type="audio" />;
   }
   return null;
 }
@@ -76,6 +95,69 @@ function MatchPairsInput({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ChoiceQuestionsInput({
+  section, value, onChange, disabled, multiple,
+}: { section: SectionLike; value: any; onChange: (v: any) => void; disabled?: boolean; multiple: boolean }) {
+  const questions: Array<{ text: string; options: string[] }> = section.config?.questions ?? [];
+  const answers: Record<string, number[]> = value?.answers ?? {};
+  const setAnswer = (qi: number, option: number) => {
+    const key = String(qi);
+    const current = answers[key] ?? [];
+    const next = multiple
+      ? current.includes(option)
+        ? current.filter((x) => x !== option)
+        : [...current, option]
+      : [option];
+    onChange({ answers: { ...answers, [key]: next } });
+  };
+  return (
+    <div className="space-y-4">
+      {questions.map((q, qi) => (
+        <Card key={qi} className="space-y-3 p-3">
+          <Label className="font-semibold">{q.text || `Pregunta ${qi + 1}`}</Label>
+          <div className="space-y-2">
+            {(q.options ?? []).map((opt, oi) => (
+              <label key={oi} className="flex items-center gap-2 rounded-md border border-border p-2 text-sm">
+                <input
+                  type={multiple ? "checkbox" : "radio"}
+                  name={`answer-${section.id}-${qi}`}
+                  checked={(answers[String(qi)] ?? []).includes(oi)}
+                  onChange={() => setAnswer(qi, oi)}
+                  disabled={disabled}
+                  className="accent-primary"
+                />
+                <span>{opt}</span>
+              </label>
+            ))}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function MediaQuestionsInput({
+  section, value, onChange, disabled, type,
+}: { section: SectionLike; value: any; onChange: (v: any) => void; disabled?: boolean; type: "video" | "audio" }) {
+  const mediaUrl = section.config?.media_url;
+  return (
+    <div className="space-y-4">
+      {mediaUrl && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3">
+          {type === "video" ? (
+            <div className="aspect-video overflow-hidden rounded-md bg-foreground/10">
+              <iframe src={mediaUrl} title="Actividad de video" className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+          ) : (
+            <audio src={mediaUrl} controls className="w-full" />
+          )}
+        </div>
+      )}
+      <ChoiceQuestionsInput section={section} value={value} onChange={onChange} disabled={disabled} multiple={false} />
     </div>
   );
 }
@@ -156,6 +238,42 @@ export function SectionResponseView({ section, response }: { section: SectionLik
       <div className="space-y-1 text-sm">
         <div><span className="text-muted-foreground">Respuesta: </span>{order.join(" · ") || "—"}</div>
         <div><span className="text-muted-foreground">Correcto: </span>{correct.join(" · ")}</div>
+      </div>
+    );
+  }
+  if (["multiple_choice", "multi_select", "video_questions", "audio_questions"].includes(section.section_type)) {
+    const questions: Array<{ text: string; options: string[]; correct?: number[] }> = section.config?.questions ?? [];
+    const answers: Record<string, number[]> = response?.answers ?? {};
+    return (
+      <div className="space-y-3 text-sm">
+        {(section.section_type === "video_questions" || section.section_type === "audio_questions") && section.config?.media_url && (
+          <div className="rounded-md border border-border bg-muted/30 p-3">
+            {section.section_type === "video_questions" ? (
+              <div className="aspect-video overflow-hidden rounded-md bg-foreground/10">
+                <iframe src={section.config.media_url} title="Material respondido" className="h-full w-full" allowFullScreen />
+              </div>
+            ) : (
+              <audio src={section.config.media_url} controls className="w-full" />
+            )}
+          </div>
+        )}
+        {questions.map((q, qi) => {
+          const picked = answers[String(qi)] ?? [];
+          const correct = q.correct ?? [];
+          const ok = picked.length === correct.length && picked.every((x) => correct.includes(x));
+          return (
+            <div key={qi} className="rounded-md border border-border p-3">
+              <div className="mb-2 flex items-start gap-2 font-medium">
+                {ok ? <CheckCircle2 className="h-4 w-4 text-success" /> : <XCircle className="h-4 w-4 text-destructive" />}
+                <span>{q.text}</span>
+              </div>
+              <div className="space-y-1 text-muted-foreground">
+                <div>Respuesta: {picked.map((i) => q.options?.[i]).filter(Boolean).join(", ") || "—"}</div>
+                <div>Correcta: {correct.map((i) => q.options?.[i]).filter(Boolean).join(", ") || "—"}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
