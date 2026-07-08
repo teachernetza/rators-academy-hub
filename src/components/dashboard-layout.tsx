@@ -18,7 +18,7 @@ type NavItem = { to: string; label: string; icon: React.ComponentType<{ classNam
 const NAV: Record<AppRole, NavItem[]> = {
   admin: [
     { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/admin/teachers", label: "Teachers", icon: GraduationCap },
+    { to: "/admin/teachers", label: "Teachers", icon: UserCircle },
     { to: "/admin/students", label: "Students", icon: Users },
     { to: "/admin/courses", label: "Courses", icon: BookOpen },
     { to: "/admin/activities", label: "Activities", icon: FileText },
