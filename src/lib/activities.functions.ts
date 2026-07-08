@@ -9,7 +9,15 @@ async function admin(): Promise<_AdminClient> {
 }
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const cefrEnum = z.enum(CEFR_LEVELS);
-const sectionTypeEnum = z.enum(["open_text", "match_pairs", "order_words"]);
+const sectionTypeEnum = z.enum([
+  "open_text",
+  "match_pairs",
+  "order_words",
+  "multiple_choice",
+  "multi_select",
+  "video_questions",
+  "audio_questions",
+]);
 
 async function getRole(userId: string) {
   const { data } = await (await admin()).from("profiles").select("role").eq("id", userId).maybeSingle();
