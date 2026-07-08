@@ -79,7 +79,7 @@ function Landing() {
               className="h-10 w-10 object-contain sm:hidden"
             />
             <img
-              src="/banner_teacher_netza.png" alt="Teacher Netza"
+              src="/banner_teacher_netza.png"
               alt="Teacher Netza — Clases de Inglés"
               className="hidden h-10 w-auto object-contain sm:block"
             />

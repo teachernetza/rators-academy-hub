@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, Settings, LogOut,
+  LayoutDashboard, Users, BookOpen, Settings, LogOut,
   ClipboardList, UserCircle, Menu, BarChart3, Compass, Award,
   Megaphone, CalendarDays, FileText, Inbox,
 } from "lucide-react";
@@ -18,7 +18,7 @@ type NavItem = { to: string; label: string; icon: React.ComponentType<{ classNam
 const NAV: Record<AppRole, NavItem[]> = {
   admin: [
     { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/admin/teachers", label: "Teachers", icon: GraduationCap },
+    { to: "/admin/teachers", label: "Teachers", icon: UserCircle },
     { to: "/admin/students", label: "Students", icon: Users },
     { to: "/admin/courses", label: "Courses", icon: BookOpen },
     { to: "/admin/activities", label: "Activities", icon: FileText },
@@ -98,10 +98,8 @@ export function DashboardLayout({ role, children }: { role: AppRole; children: R
               </SheetContent>
             </Sheet>
             <div className="lg:hidden flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <GraduationCap className="h-4 w-4" />
-              </div>
-              <span className="font-heading text-base font-bold">Rators</span>
+              <img src="/icono_teacher_netza.png" alt="Teacher Netza" className="h-8 w-8 object-contain" />
+              <span className="font-heading text-base font-bold">Teacher Netza</span>
             </div>
           </div>
 
@@ -136,11 +134,9 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-elegant)]">
-          <GraduationCap className="h-5 w-5" />
-        </div>
+        <img src="/icono_teacher_netza.png" alt="Teacher Netza" className="h-9 w-9 object-contain" />
         <div>
-          <p className="font-heading text-base font-bold text-sidebar-foreground">Rators Academy</p>
+          <p className="font-heading text-base font-bold text-sidebar-foreground">Teacher Netza</p>
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{ROLE_LABEL[role]}</p>
         </div>
       </div>
@@ -167,7 +163,7 @@ function SidebarContent({
         })}
       </nav>
       <div className="border-t border-sidebar-border p-4 text-xs text-muted-foreground">
-        © Rators Academy
+        © Teacher Netza
       </div>
     </div>
   );

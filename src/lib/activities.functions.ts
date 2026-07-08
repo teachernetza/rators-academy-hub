@@ -9,7 +9,15 @@ async function admin(): Promise<_AdminClient> {
 }
 export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const cefrEnum = z.enum(CEFR_LEVELS);
-const sectionTypeEnum = z.enum(["open_text", "match_pairs", "order_words"]);
+const sectionTypeEnum = z.enum([
+  "open_text",
+  "match_pairs",
+  "order_words",
+  "multiple_choice",
+  "multi_select",
+  "video_questions",
+  "audio_questions",
+]);
 
 async function getRole(userId: string) {
   const { data } = await (await admin()).from("profiles").select("role").eq("id", userId).maybeSingle();
@@ -172,7 +180,7 @@ export const saveActivitySections = createServerFn({ method: "POST" })
       config: s.config ?? {},
       order_index: i,
     }));
-    const { error } = await (await admin()).from("activity_sections").insert(rows);
+    const { error } = await (await admin()).from("activity_sections").insert(rows as any);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -458,4 +466,58 @@ export const listStudents = createServerFn({ method: "GET" })
       .from("profiles").select("id, full_name").eq("role", "student").eq("is_active", true)
       .order("full_name");
     return data ?? [];
+  });
+
+export const listStudentAssignmentsForStaff = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ student_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const role = await assertStaff(context.userId);
+    const { data: student } = await (await admin())
+      .from("profiles")
+      .select("id, full_name, status, is_active")
+      .eq("id", data.student_id)
+      .eq("role", "student")
+      .single();
+    if (!student) throw new Error("Student not found");
+
+    if (role === "teacher") {
+      const { data: linked } = await (await admin())
+        .from("enrollments")
+        .select("id, courses!inner(teacher_id)")
+        .eq("student_id", data.student_id)
+        .eq("courses.teacher_id", context.userId)
+        .limit(1)
+        .maybeSingle();
+      if (!linked) throw new Error("Forbidden");
+    }
+
+    const { data: assignments, error } = await (await admin())
+      .from("activity_assignments")
+      .select("id, activity_id, assigned_by, status, due_date, assigned_at, approved_at")
+      .eq("student_id", data.student_id)
+      .order("assigned_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const activityIds = Array.from(new Set((assignments ?? []).map((a) => a.activity_id)));
+    const teacherIds = Array.from(new Set((assignments ?? []).map((a) => a.assigned_by)));
+    const [{ data: activities }, { data: teachers }] = await Promise.all([
+      activityIds.length
+        ? (await admin()).from("activities").select("id, title, cefr_level").in("id", activityIds)
+        : Promise.resolve({ data: [] as any[] }),
+      teacherIds.length
+        ? (await admin()).from("profiles").select("id, full_name").in("id", teacherIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const activityMap = new Map((activities ?? []).map((a: any) => [a.id, a]));
+    const teacherMap = new Map((teachers ?? []).map((t: any) => [t.id, t.full_name]));
+
+    return {
+      student,
+      assignments: (assignments ?? []).map((a) => ({
+        ...a,
+        activity: activityMap.get(a.activity_id) ?? null,
+        assigned_by_name: teacherMap.get(a.assigned_by) ?? "—",
+      })),
+    };
   });
