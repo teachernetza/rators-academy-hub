@@ -820,7 +820,14 @@ export type Database = {
       }
     }
     Enums: {
-      activity_section_type: "open_text" | "match_pairs" | "order_words"
+      activity_section_type:
+        | "open_text"
+        | "match_pairs"
+        | "order_words"
+        | "multiple_choice"
+        | "multi_select"
+        | "video_questions"
+        | "audio_questions"
       app_role: "admin" | "teacher" | "student"
       assignment_status:
         | "pending"
@@ -960,7 +967,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_section_type: ["open_text", "match_pairs", "order_words"],
+      activity_section_type: [
+        "open_text",
+        "match_pairs",
+        "order_words",
+        "multiple_choice",
+        "multi_select",
+        "video_questions",
+        "audio_questions",
+      ],
       app_role: ["admin", "teacher", "student"],
       assignment_status: [
         "pending",
