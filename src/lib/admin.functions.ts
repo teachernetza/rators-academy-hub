@@ -22,6 +22,12 @@ async function assertAdmin(userId: string) {
   if (!data || data.role !== "admin") throw new Error("Forbidden");
 }
 
+async function getRole(userId: string) {
+  const { data } = await (await admin())
+    .from("profiles").select("role").eq("id", userId).maybeSingle();
+  return data?.role as "admin" | "teacher" | "student" | undefined;
+}
+
 export const adminGetStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -61,7 +67,10 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createUserSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    const callerRole = await getRole(context.userId);
+    if (callerRole !== "admin" && !(callerRole === "teacher" && data.role === "student")) {
+      throw new Error("Forbidden");
+    }
     const password = generatePassword();
     const { data: created, error } = await (await admin()).auth.admin.createUser({
       email: data.email,

@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus, Copy, Loader2 } from "lucide-react";
 import { adminListUsers, adminCreateUser, adminDeleteUser, adminToggleActive } from "@/lib/admin.functions";
 import { AssignActivityDialog } from "@/components/activities/assign-activity-dialog";
+import { StudentProfileDialog } from "@/components/activities/student-profile-dialog";
 import { toast } from "sonner";
 
 type Role = "teacher" | "student";
@@ -137,11 +138,18 @@ export function makeUsersPage(role: Role, title: string) {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {role === "student" && (
-                        <AssignActivityDialog
-                          studentId={u.id}
-                          studentName={u.full_name || undefined}
-                          trigger={<Button size="sm" variant="outline">Asignar</Button>}
-                        />
+                        <>
+                          <StudentProfileDialog
+                            studentId={u.id}
+                            studentName={u.full_name || undefined}
+                            trigger={<Button size="sm" variant="outline">Perfil</Button>}
+                          />
+                          <AssignActivityDialog
+                            studentId={u.id}
+                            studentName={u.full_name || undefined}
+                            trigger={<Button size="sm" variant="outline">Asignar actividad</Button>}
+                          />
+                        </>
                       )}
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Delete ${u.full_name}?`)) deleteM.mutate(u.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
