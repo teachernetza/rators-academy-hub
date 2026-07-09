@@ -1,50 +1,55 @@
-## Plan de implementación
+## Objetivo
 
-1. **Arreglar el bloqueo de Firebase/Lovable Cloud al crear usuarios y cursos**
-   - Revisar y corregir permisos del backend para que las tablas de perfiles, cursos, inscripciones, actividades, secciones, entregas, comentarios y tareas sean accesibles por las funciones internas.
-   - Ajustar las funciones de creación para que no dependan de permisos inexistentes y muestren errores claros si falta sesión o rol.
-   - Validar flujo completo: crear estudiante, crear teacher y crear curso desde admin/teacher.
+Dejar el sistema de autenticación, autorización y administración de usuarios completamente funcional en desarrollo y en producción (Vercel), eliminar el error `Missing Supabase environment variable(s): SUPABASE_SERVICE_ROLE_KEY`, y ampliar el panel de admin con edición, reset de contraseña, cambio de rol y búsqueda.
 
-2. **Limpiar el login antes de entregar accesos reales**
-   - Quitar del login la sección visible de cuentas demo.
-   - Dejar un formulario limpio para alumnos/teachers/admin.
-   - Mantener ocultos los accesos de prueba. El acceso teacher demo actual es: `teacher@ratorsacademy.com` / `Teacher1234!`.
+## Diagnóstico
 
-3. **Perfil/listado de estudiante con botón “Asignar actividad”**
-   - Mejorar la vista de estudiantes para que cada alumno tenga una acción clara: “Asignar actividad”.
-   - Si ya existe el diálogo, asegurar que cargue actividades correctamente y permita seleccionar actividad, nivel y fecha límite.
-   - Opcionalmente abrir un detalle rápido del estudiante con actividades asignadas y estado, usando lo que ya existe en la app.
+1. **Causa del error del Service Role Key.** El proyecto está desplegado en Vercel (`vercel.json`). Las variables `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` existen en Lovable Cloud pero **no** están cargadas en Vercel. `src/integrations/supabase/client.server.ts` las exige y lanza ese mensaje exacto cuando faltan. Es un problema de configuración de entorno, no de código.
+2. **Uso del Service Role.** Ya está aislado en `client.server.ts` y sólo se importa dinámicamente dentro de `.handler()` de server functions (`admin.functions.ts`, `activities.functions.ts`). Nunca llega al bundle del cliente. Se validará que ninguna nueva ruta lo importe a nivel de módulo.
+3. **Panel de admin (`src/components/admin-users-page.tsx`).** Hoy sólo permite crear, borrar y activar/desactivar. Faltan: editar nombre, cambiar rol, resetear contraseña, y buscar/filtrar.
+4. **RLS.** Las tablas ya tienen RLS habilitado con políticas basadas en `has_role()` y `auth.uid()`. Se ejecutará el linter de Supabase y se corregirá lo que reporte (p.ej. políticas faltantes en tablas nuevas o `security definer` sin `search_path`).
+5. **`profiles` al crear usuario.** Existe trigger `handle_new_user` que auto-inserta en `profiles`. `adminCreateUser` además hace `upsert` de respaldo — correcto.
 
-4. **Motor de creación de actividades más completo**
-   - Ampliar el editor actual para soportar tipos prácticos de actividad:
-     - Respuesta abierta.
-     - Unir parejas.
-     - Ordenar palabras/frases.
-     - Opción múltiple.
-     - Selección múltiple.
-     - Link de video con preview embebida y preguntas asociadas.
-     - Audio/link de audio con reproductor y preguntas asociadas.
-   - Actualizar la vista del estudiante para responder esos nuevos tipos.
-   - Actualizar la vista del teacher para revisar respuestas y dar retroalimentación.
+## Cambios de código
 
-5. **Comunicación teacher-estudiante dentro de la plataforma**
-   - Aprovechar el sistema existente de comentarios y revisión de actividades.
-   - Asegurar que cuando el alumno envía una actividad, el teacher la vea en su inbox.
-   - Asegurar que las observaciones del teacher regresen al alumno y que pueda reenviar si se piden cambios.
-   - Mantener comentarios en lecciones como canal de comunicación por curso.
+**Backend (server functions en `src/lib/admin.functions.ts`)** — agregar:
+- `adminUpdateUser({ id, full_name })`
+- `adminUpdateRole({ id, role })` — solo admin
+- `adminResetPassword({ id })` — usa `auth.admin.updateUserById` con contraseña generada, devuelve la nueva contraseña una sola vez
+- Validación estricta con Zod, `assertAdmin` en todas, manejo de errores explícito.
 
-6. **Volver la plataforma descargable/instalable**
-   - Corregir la configuración PWA actual: manifest, nombre, colores `#0f3b4b`, iconos actuales y service worker.
-   - Reemplazar referencias viejas a iconos inexistentes (`icon-192.png`, `icon-512.png`) por los assets actuales.
-   - Confirmar que el botón de instalar/“Agregar a pantalla de inicio” vuelva a funcionar en la app publicada.
+**RLS/Postgres** — migración para:
+- Bloquear que un usuario cambie su propio `role` en `profiles` (política de UPDATE que excluye la columna `role` para no-admin, vía trigger `BEFORE UPDATE`).
+- Añadir `GRANT` faltantes que reporte el linter.
 
-7. **Verificación final**
-   - Probar en preview: login, crear student, crear teacher, crear curso, crear actividad, asignarla a estudiante y revisar flujo básico de entrega/revisión.
-   - Revisar que no aparezcan cuentas demo en login.
-   - Revisar que la PWA tenga manifest e icono válidos para descarga.
+**Frontend (`src/components/admin-users-page.tsx`)** — rediseñar tabla con:
+- Barra de búsqueda (nombre/email) + filtro por rol y estado.
+- Menú de acciones por fila: Editar, Cambiar rol, Resetear contraseña, Activar/Desactivar, Eliminar.
+- Diálogos para cada acción con feedback vía `toast`.
+- Los diálogos actuales de Perfil y Asignar actividad se conservan.
 
-## Notas técnicas
+**Verificación** — ejecutar en el sandbox:
+- Typecheck (`tsgo`).
+- Linter de Supabase (`supabase--linter`) y arreglar hallazgos.
+- Pruebas manuales por Playwright: login admin, crear teacher, editar, resetear password, cambiar rol, desactivar, borrar; login como teacher, verificar que no puede acceder a rutas admin ni cambiar su propio rol vía API.
 
-- No se agregará Firebase; la app debe funcionar con el backend ya conectado.
-- El problema de permisos apunta a que las tablas públicas no tienen grants para los roles usados por el backend, así que se solucionará con migración de permisos y, si hace falta, ajustes mínimos en funciones.
-- El motor de actividades se construirá sobre las tablas y componentes existentes (`activities`, `activity_sections`, asignaciones y submissions), evitando rehacer la app desde cero.
+## Variables de entorno
+
+**No cambia** lo que Lovable Cloud ya inyecta. Lo que hay que configurar **manualmente en Vercel** (Project → Settings → Environment Variables, para *Production*, *Preview* y *Development*):
+
+| Variable | Valor | Dónde obtenerla |
+|---|---|---|
+| `SUPABASE_URL` | igual a `VITE_SUPABASE_URL` de tu `.env` | Lovable → Backend → API |
+| `SUPABASE_PUBLISHABLE_KEY` | igual a `VITE_SUPABASE_PUBLISHABLE_KEY` | Lovable → Backend → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | secret `service_role` | Lovable → Backend → API keys → *Service role* (Reveal) |
+| `VITE_SUPABASE_URL` | mismo valor de `SUPABASE_URL` | idem |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | mismo valor | idem |
+| `VITE_SUPABASE_PROJECT_ID` | ref del proyecto | Lovable → Backend → API |
+
+`SUPABASE_SERVICE_ROLE_KEY` se marca como *Sensitive*. Nunca lleva prefijo `VITE_`. Tras agregarlas, redeploy en Vercel.
+
+En Lovable no hay que tocar nada: las mismas variables ya están presentes como secrets del backend.
+
+## Entregable final
+
+Al terminar la implementación entregaré un reporte con: problemas encontrados, solución aplicada, archivos modificados, variables a configurar (arriba), configuraciones en Supabase (ninguna manual: todo vía migración) y resultados de las pruebas ejecutadas.
