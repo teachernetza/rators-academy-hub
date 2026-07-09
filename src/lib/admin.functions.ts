@@ -114,6 +114,57 @@ export const adminToggleActive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const adminUpdateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    full_name: z.string().min(1).max(120),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const client = await admin();
+    const { error } = await client.from("profiles")
+      .update({ full_name: data.full_name })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await client.auth.admin.updateUserById(data.id, {
+      user_metadata: { full_name: data.full_name },
+    });
+    return { ok: true };
+  });
+
+export const adminUpdateRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    role: z.enum(["admin", "teacher", "student"]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if (data.id === context.userId) throw new Error("No puedes cambiar tu propio rol");
+    const client = await admin();
+    const { error } = await client.from("profiles")
+      .update({ role: data.role })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await client.auth.admin.updateUserById(data.id, {
+      user_metadata: { role: data.role },
+    });
+    return { ok: true };
+  });
+
+export const adminResetPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const password = generatePassword();
+    const { error } = await (await admin()).auth.admin.updateUserById(data.id, { password });
+    if (error) throw new Error(error.message);
+    return { password };
+  });
+
+
 export const adminListByRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ role: z.enum(["teacher", "student"]) }).parse(d))
