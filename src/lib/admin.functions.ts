@@ -50,12 +50,16 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
-    const { data } = await (await admin())
+    const client = await admin();
+    const { data: profiles } = await client
       .from("profiles")
       .select("id, full_name, role, status, is_active, created_at")
       .order("created_at", { ascending: false });
-    return data ?? [];
+    const { data: authList } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const emailById = new Map((authList?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+    return (profiles ?? []).map((p) => ({ ...p, email: emailById.get(p.id) ?? "" }));
   });
+
 
 const createUserSchema = z.object({
   full_name: z.string().min(1).max(120),
