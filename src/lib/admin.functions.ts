@@ -50,12 +50,16 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
-    const { data } = await (await admin())
+    const client = await admin();
+    const { data: profiles } = await client
       .from("profiles")
       .select("id, full_name, role, status, is_active, created_at")
       .order("created_at", { ascending: false });
-    return data ?? [];
+    const { data: authList } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const emailById = new Map((authList?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+    return (profiles ?? []).map((p) => ({ ...p, email: emailById.get(p.id) ?? "" }));
   });
+
 
 const createUserSchema = z.object({
   full_name: z.string().min(1).max(120),
@@ -113,6 +117,57 @@ export const adminToggleActive = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminUpdateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    full_name: z.string().min(1).max(120),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const client = await admin();
+    const { error } = await client.from("profiles")
+      .update({ full_name: data.full_name })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await client.auth.admin.updateUserById(data.id, {
+      user_metadata: { full_name: data.full_name },
+    });
+    return { ok: true };
+  });
+
+export const adminUpdateRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    role: z.enum(["admin", "teacher", "student"]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if (data.id === context.userId) throw new Error("No puedes cambiar tu propio rol");
+    const client = await admin();
+    const { error } = await client.from("profiles")
+      .update({ role: data.role })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await client.auth.admin.updateUserById(data.id, {
+      user_metadata: { role: data.role },
+    });
+    return { ok: true };
+  });
+
+export const adminResetPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const password = generatePassword();
+    const { error } = await (await admin()).auth.admin.updateUserById(data.id, { password });
+    if (error) throw new Error(error.message);
+    return { password };
+  });
+
 
 export const adminListByRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
