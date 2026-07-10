@@ -1,42 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-type _AdminClient = typeof import("@/integrations/supabase/client.server")["supabaseAdmin"];
-let __supabaseAdmin: _AdminClient | undefined;
-async function admin(): Promise<_AdminClient> {
-  if (!__supabaseAdmin) __supabaseAdmin = (await import("@/integrations/supabase/client.server")).supabaseAdmin;
-  return __supabaseAdmin;
-}
-function generatePassword(length = 12) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  let out = "";
-  const arr = new Uint32Array(length);
-  crypto.getRandomValues(arr);
-  for (let i = 0; i < length; i++) out += chars[arr[i] % chars.length];
-  return out + "!1";
-}
-
-async function assertAdmin(userId: string) {
-  const { data } = await (await admin())
-    .from("profiles").select("role").eq("id", userId).maybeSingle();
-  if (!data || data.role !== "admin") throw new Error("Forbidden");
-}
-
-async function getRole(userId: string) {
-  const { data } = await (await admin())
-    .from("profiles").select("role").eq("id", userId).maybeSingle();
-  return data?.role as "admin" | "teacher" | "student" | undefined;
-}
 
 export const adminGetStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
+    const admin = getSupabaseAdmin();
     const [students, teachers, courses, enrollments] = await Promise.all([
-      (await admin()).from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
-      (await admin()).from("profiles").select("*", { count: "exact", head: true }).eq("role", "teacher"),
-      (await admin()).from("courses").select("*", { count: "exact", head: true }),
-      (await admin()).from("enrollments").select("*", { count: "exact", head: true }),
+      admin.from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
+      admin.from("profiles").select("*", { count: "exact", head: true }).eq("role", "teacher"),
+      admin.from("courses").select("*", { count: "exact", head: true }),
+      admin.from("enrollments").select("*", { count: "exact", head: true }),
     ]);
     return {
       students: students.count ?? 0,
@@ -49,17 +25,17 @@ export const adminGetStats = createServerFn({ method: "GET" })
 export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
-    const client = await admin();
-    const { data: profiles } = await client
+    const admin = getSupabaseAdmin();
+    const { data: profiles } = await admin
       .from("profiles")
       .select("id, full_name, role, status, is_active, created_at")
       .order("created_at", { ascending: false });
-    const { data: authList } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const { data: authList } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     const emailById = new Map((authList?.users ?? []).map((u) => [u.id, u.email ?? ""]));
     return (profiles ?? []).map((p) => ({ ...p, email: emailById.get(p.id) ?? "" }));
   });
-
 
 const createUserSchema = z.object({
   full_name: z.string().min(1).max(120),
@@ -71,19 +47,21 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createUserSchema.parse(d))
   .handler(async ({ data, context }) => {
+    const { getRole, getSupabaseAdmin, generatePassword } = await import("./admin-helpers.server");
     const callerRole = await getRole(context.userId);
     if (callerRole !== "admin" && !(callerRole === "teacher" && data.role === "student")) {
       throw new Error("Forbidden");
     }
+    const admin = getSupabaseAdmin();
     const password = generatePassword();
-    const { data: created, error } = await (await admin()).auth.admin.createUser({
+    const { data: created, error } = await admin.auth.admin.createUser({
       email: data.email,
       password,
       email_confirm: true,
       user_metadata: { full_name: data.full_name, role: data.role },
     });
     if (error) throw new Error(error.message);
-    await (await admin()).from("profiles").upsert({
+    await admin.from("profiles").upsert({
       id: created.user!.id,
       full_name: data.full_name,
       role: data.role,
@@ -97,9 +75,10 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
     if (data.id === context.userId) throw new Error("Cannot delete yourself");
-    const { error } = await (await admin()).auth.admin.deleteUser(data.id);
+    const { error } = await getSupabaseAdmin().auth.admin.deleteUser(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -110,8 +89,9 @@ export const adminToggleActive = createServerFn({ method: "POST" })
     id: z.string().uuid(), is_active: z.boolean(),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
-    const { error } = await (await admin()).from("profiles")
+    const { error } = await getSupabaseAdmin().from("profiles")
       .update({ is_active: data.is_active, status: data.is_active ? "active" : "inactive" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -125,13 +105,14 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     full_name: z.string().min(1).max(120),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
-    const client = await admin();
-    const { error } = await client.from("profiles")
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("profiles")
       .update({ full_name: data.full_name })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await client.auth.admin.updateUserById(data.id, {
+    await admin.auth.admin.updateUserById(data.id, {
       user_metadata: { full_name: data.full_name },
     });
     return { ok: true };
@@ -144,14 +125,15 @@ export const adminUpdateRole = createServerFn({ method: "POST" })
     role: z.enum(["admin", "teacher", "student"]),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
     if (data.id === context.userId) throw new Error("No puedes cambiar tu propio rol");
-    const client = await admin();
-    const { error } = await client.from("profiles")
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("profiles")
       .update({ role: data.role })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await client.auth.admin.updateUserById(data.id, {
+    await admin.auth.admin.updateUserById(data.id, {
       user_metadata: { role: data.role },
     });
     return { ok: true };
@@ -161,20 +143,21 @@ export const adminResetPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin, generatePassword } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
     const password = generatePassword();
-    const { error } = await (await admin()).auth.admin.updateUserById(data.id, { password });
+    const { error } = await getSupabaseAdmin().auth.admin.updateUserById(data.id, { password });
     if (error) throw new Error(error.message);
     return { password };
   });
-
 
 export const adminListByRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ role: z.enum(["teacher", "student"]) }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
-    const { data: rows } = await (await admin()).from("profiles")
+    const { data: rows } = await getSupabaseAdmin().from("profiles")
       .select("id, full_name").eq("role", data.role).order("full_name");
     return rows ?? [];
   });
@@ -186,8 +169,9 @@ export const adminEnrollStudent = createServerFn({ method: "POST" })
     course_id: z.string().uuid(),
   }).parse(d))
   .handler(async ({ data, context }) => {
+    const { assertAdmin, getSupabaseAdmin } = await import("./admin-helpers.server");
     await assertAdmin(context.userId);
-    const { error } = await (await admin()).from("enrollments")
+    const { error } = await getSupabaseAdmin().from("enrollments")
       .upsert({ student_id: data.student_id, course_id: data.course_id }, { onConflict: "student_id,course_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
